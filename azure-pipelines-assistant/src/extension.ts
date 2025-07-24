@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import { IExtensionContext } from './interfaces';
+import { AzurePipelinesTreeDataProvider } from './services/treeDataProvider';
+import { AuthenticationService } from './services/authenticationService';
+import { AzureDevOpsService } from './services/azureDevOpsService';
+import { CacheService } from './services/cacheService';
 
 /**
  * Extension activation function
@@ -8,17 +12,63 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	console.log('Azure Pipelines Assistant is activating...');
 
 	try {
-		// Create extension context (will be implemented in next task)
-		// const extensionContext = await createExtensionContext(context);
+		// Initialize services
+		const authService = new AuthenticationService(context);
+		const cacheService = new CacheService();
 		
-		// Register commands (will be implemented in next task)
-		// registerCommands(context, extensionContext);
+		// Create API client (will be implemented in next task)
+		// For now, we'll pass authService as a placeholder
+		const azureDevOpsService = new AzureDevOpsService(
+			authService as any, // Placeholder until API client is implemented
+			cacheService,
+			{
+				organization: 'placeholder', // Will be configured by user
+				personalAccessToken: 'placeholder', // Will be configured by user
+				maxRetries: 3,
+				retryDelay: 1000,
+				cacheEnabled: true,
+				cacheTtl: 5 * 60 * 1000
+			}
+		);
 		
-		// Initialize tree view (will be implemented in next task)
-		// initializeTreeView(context, extensionContext);
+		// Create tree data provider
+		const treeDataProvider = new AzurePipelinesTreeDataProvider(
+			azureDevOpsService,
+			authService,
+			context
+		);
 		
-		// Set context for when clause evaluation
-		await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.configured', false);
+		// Register tree view
+		const treeView = vscode.window.createTreeView('azurePipelinesExplorer', {
+			treeDataProvider,
+			showCollapseAll: true,
+			canSelectMany: false
+		});
+		
+		// Set tree view reference in provider
+		treeDataProvider.setTreeView(treeView);
+		
+		// Register basic commands
+		const refreshCommand = vscode.commands.registerCommand('azurePipelinesAssistant.refresh', () => {
+			treeDataProvider.refresh();
+		});
+		
+		const configureCommand = vscode.commands.registerCommand('azurePipelinesAssistant.configure', async () => {
+			await vscode.commands.executeCommand('workbench.action.openSettings', 'azurePipelinesAssistant');
+		});
+		
+		// Add disposables to context
+		context.subscriptions.push(treeView, refreshCommand, configureCommand);
+		
+		// Set initial context for when clause evaluation
+		const isConfigured = authService.isAuthenticated();
+		await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.configured', isConfigured);
+		
+		// Listen for authentication changes to update context
+		const authChangeDisposable = authService.onAuthenticationChanged(async (authenticated) => {
+			await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.configured', authenticated);
+		});
+		context.subscriptions.push(authChangeDisposable);
 		
 		console.log('Azure Pipelines Assistant activated successfully');
 	} catch (error) {

@@ -36,9 +36,6 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [x] 5. Build core Azure DevOps service
-
-
-
   - Create IAzureDevOpsService interface with all pipeline management methods
   - Implement project and pipeline fetching with caching integration
   - Add pipeline run retrieval and triggering functionality
@@ -47,7 +44,7 @@
   - Write comprehensive unit tests for service methods
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 5.1, 5.2, 5.3_
 
-- [ ] 6. Create tree view data structures
+- [x] 6. Create tree view data structures
   - Implement abstract TreeItem base class and concrete implementations (ProjectTreeItem, PipelineTreeItem, RunTreeItem)
   - Add appropriate VS Code icons and context values for each tree item type
   - Create status icon mapping for different pipeline run states
@@ -55,7 +52,11 @@
   - Write unit tests for tree item creation and property assignment
   - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2_
 
-- [ ] 7. Implement pipeline tree provider
+- [x] 7. Implement pipeline tree provider
+
+
+
+
   - Create PipelineTreeProvider class implementing vscode.TreeDataProvider interface
   - Implement getChildren method with hierarchical project → pipeline → run structure
   - Add tree refresh functionality with event emission

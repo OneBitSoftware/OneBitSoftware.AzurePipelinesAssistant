@@ -475,32 +475,36 @@ function parseApiResponse<T>(response: any, schema: Schema<T>): T {
 - **Error Scenarios**: Test error handling and recovery mechanisms
 
 ### Test Structure
+**All tests MUST use VS Code's `suite` and `test` syntax for compatibility with the VS Code extension test runner.**
+
 ```typescript
-// Example unit test
-describe('AzureDevOpsService', () => {
+// Example unit test - CORRECT FORMAT for VS Code Extensions
+suite('AzureDevOpsService', () => {
   let service: AzureDevOpsService;
-  let mockApiClient: jest.Mocked<ApiClient>;
+  let mockApiClient: sinon.SinonStubbedInstance<ApiClient>;
   
-  beforeEach(() => {
-    mockApiClient = createMockApiClient();
+  setup(() => {
+    mockApiClient = sinon.createStubInstance(ApiClient);
     service = new AzureDevOpsService(mockApiClient);
   });
   
-  describe('getPipelines', () => {
-    it('should return cached pipelines when available', async () => {
+  suite('getPipelines', () => {
+    test('should return cached pipelines when available', async () => {
       // Test implementation
     });
     
-    it('should fetch from API when cache is expired', async () => {
+    test('should fetch from API when cache is expired', async () => {
       // Test implementation
     });
     
-    it('should handle API errors gracefully', async () => {
+    test('should handle API errors gracefully', async () => {
       // Test implementation
     });
   });
 });
 ```
+
+**Important**: Use VS Code's `suite` and `test` syntax, NOT Mocha's `describe` and `it`. This ensures compatibility with the VS Code extension test runner.
 
 ### Performance Testing
 - **Memory Usage**: Monitor memory consumption with large datasets

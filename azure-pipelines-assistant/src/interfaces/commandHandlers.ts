@@ -1,4 +1,4 @@
-import { AzurePipelinesTreeItem } from '../services/treeDataProvider';
+import { IAzurePipelinesTreeItem } from '../models/treeItems';
 
 /**
  * Interface for command handlers
@@ -17,45 +17,45 @@ export interface ICommandHandlers {
   /**
    * Run a pipeline
    */
-  runPipeline(item: AzurePipelinesTreeItem): Promise<void>;
+  runPipeline(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * View item in browser
    */
-  viewInBrowser(item: AzurePipelinesTreeItem): Promise<void>;
+  viewInBrowser(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * View run details
    */
-  viewRunDetails(item: AzurePipelinesTreeItem): Promise<void>;
+  viewRunDetails(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * View logs for a run
    */
-  viewLogs(item: AzurePipelinesTreeItem): Promise<void>;
+  viewLogs(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * Download artifacts from a run
    */
-  downloadArtifacts(item: AzurePipelinesTreeItem): Promise<void>;
+  downloadArtifacts(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * Add item to favorites
    */
-  addToFavorites(item: AzurePipelinesTreeItem): Promise<void>;
+  addToFavorites(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * Remove item from favorites
    */
-  removeFromFavorites(item: AzurePipelinesTreeItem): Promise<void>;
+  removeFromFavorites(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * View recent runs for a pipeline
    */
-  viewRecentRuns(item: AzurePipelinesTreeItem): Promise<void>;
+  viewRecentRuns(item: IAzurePipelinesTreeItem): Promise<void>;
   
   /**
    * Cancel a running pipeline
    */
-  cancelRun(item: AzurePipelinesTreeItem): Promise<void>;
+  cancelRun(item: IAzurePipelinesTreeItem): Promise<void>;
 }

@@ -7,3 +7,6 @@ export * from './job';
 export * from './stage';
 export * from './pipeline';
 export * from './pipelineRun';
+
+// Tree view data structures
+export * from './treeItems';
