@@ -16,7 +16,8 @@ export function run(): Promise<void> {
 		const testFiles = [
 			'suite/cacheService.test.js',
 			'suite/treeDataProvider.test.js',
-			'suite/treeItems.test.js'
+			'suite/treeItems.test.js',
+			'suite/commands.test.js'
 		];
 
 		testFiles.forEach(file => {

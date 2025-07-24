@@ -4,6 +4,7 @@ import { AzurePipelinesTreeDataProvider } from './services/treeDataProvider';
 import { AuthenticationService } from './services/authenticationService';
 import { AzureDevOpsService } from './services/azureDevOpsService';
 import { CacheService } from './services/cacheService';
+import { CommandHandler } from './commands';
 
 /**
  * Extension activation function
@@ -48,17 +49,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		// Set tree view reference in provider
 		treeDataProvider.setTreeView(treeView);
 		
-		// Register basic commands
-		const refreshCommand = vscode.commands.registerCommand('azurePipelinesAssistant.refresh', () => {
-			treeDataProvider.refresh();
-		});
+		// Create command handler and register all commands
+		const commandHandler = new CommandHandler(
+			azureDevOpsService,
+			authService,
+			treeDataProvider,
+			context
+		);
 		
-		const configureCommand = vscode.commands.registerCommand('azurePipelinesAssistant.configure', async () => {
-			await vscode.commands.executeCommand('workbench.action.openSettings', 'azurePipelinesAssistant');
-		});
+		const commandDisposables = commandHandler.registerCommands();
 		
 		// Add disposables to context
-		context.subscriptions.push(treeView, refreshCommand, configureCommand);
+		context.subscriptions.push(treeView, ...commandDisposables);
 		
 		// Set initial context for when clause evaluation
 		const isConfigured = authService.isAuthenticated();

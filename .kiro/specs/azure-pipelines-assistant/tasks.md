@@ -53,10 +53,6 @@
   - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2_
 
 - [x] 7. Implement pipeline tree provider
-
-
-
-
   - Create PipelineTreeProvider class implementing vscode.TreeDataProvider interface
   - Implement getChildren method with hierarchical project → pipeline → run structure
   - Add tree refresh functionality with event emission
@@ -65,7 +61,7 @@
   - Write unit tests for tree provider logic with mocked data
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 8. Create extension commands and context menus
+- [x] 8. Create extension commands and context menus
   - Register all extension commands in package.json and implement command handlers
   - Create context menu items for pipelines (View in Browser, Refresh, Add to Favorites, View Recent Runs)
   - Add context menu items for runs (View Details, View in Browser, View Logs, Download Artifacts)

@@ -70,11 +70,33 @@ export interface IAzureDevOpsService {
     /**
      * Download artifacts from a pipeline run
      * @param runId Run ID
+     * @param pipelineId Pipeline ID
      * @param projectId Project ID or name
+     * @param downloadPath Local path to download artifacts
      * @param artifactName Optional specific artifact name
-     * @returns Promise resolving to artifact data
+     * @returns Promise resolving to download path
      */
-    downloadArtifacts(runId: number, projectId: string, artifactName?: string): Promise<Blob>;
+    downloadArtifacts(runId: number, pipelineId: number, projectId: string, downloadPath: string, artifactName?: string): Promise<string>;
+
+    /**
+     * Trigger a pipeline run (alias for triggerPipelineRun)
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID or name
+     * @param parameters Optional run parameters
+     * @returns Promise resolving to the created pipeline run
+     */
+    triggerRun(pipelineId: number, projectId: string, parameters?: RunParameters): Promise<PipelineRun>;
+
+    /**
+     * Get logs for a specific job or task
+     * @param runId Run ID
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID or name
+     * @param jobId Optional job ID
+     * @param taskId Optional task ID
+     * @returns Promise resolving to log entries
+     */
+    getLogs(runId: number, pipelineId: number, projectId: string, jobId?: string, taskId?: string): Promise<LogEntry[]>;
 
     // Cache Management
     
