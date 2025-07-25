@@ -1,5 +1,6 @@
 import { Pipeline } from './pipeline';
-import { Variable, RunResources, PipelineState, PipelineResult } from './common';
+import { Stage } from './stage';
+import { Variable, RunResources, PipelineState, PipelineResult, TimelineRecord, LogReference } from './common';
 
 /**
  * Azure DevOps Pipeline Run model
@@ -21,9 +22,9 @@ export interface PipelineRun {
  * Extended pipeline run details with additional information
  */
 export interface PipelineRunDetails extends PipelineRun {
-    stages: any[]; // Will be properly typed when Stage model is implemented
-    timeline: any[]; // Will be properly typed when TimelineRecord is implemented
-    logs: any[]; // Will be properly typed when LogReference is implemented
+    stages: Stage[];
+    timeline?: TimelineRecord[];
+    logs?: LogReference[];
 }
 
 /**

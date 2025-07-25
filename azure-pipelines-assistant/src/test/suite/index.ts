@@ -12,31 +12,42 @@ export function run(): Promise<void> {
 	const testsRoot = path.resolve(__dirname, '..');
 
 	return new Promise((c, e) => {
-		// Only load the test files we know are correct
-		const testFiles = [
-			'suite/cacheService.test.js',
-			'suite/treeDataProvider.test.js',
-			'suite/treeItems.test.js',
-			'suite/commands.test.js'
+		// Use glob to find test files, but filter to only include the ones we want
+		const testFiles = new glob.Glob('**/**.test.js', { cwd: testsRoot });
+		const testFileStream = testFiles.stream();
+
+		const allowedFiles = [
+			'cacheService.test.js',
+			'treeDataProvider.test.js', 
+			'treeItems.test.js',
+			'commands.test.js',
+			'runDetailsWebview.test.js'
 		];
 
-		testFiles.forEach(file => {
-			const fullPath = path.resolve(testsRoot, file);
-			mocha.addFile(fullPath);
+		testFileStream.on('data', (file) => {
+			const fileName = path.basename(file);
+			// Only add files that are in our allowed list
+			if (allowedFiles.includes(fileName)) {
+				mocha.addFile(path.resolve(testsRoot, file));
+			}
 		});
-
-		try {
-			// Run the mocha test
-			mocha.run((failures: number) => {
-				if (failures > 0) {
-					e(new Error(`${failures} tests failed.`));
-				} else {
-					c();
-				}
-			});
-		} catch (err) {
-			console.error(err);
+		testFileStream.on('error', (err) => {
 			e(err);
-		}
+		});
+		testFileStream.on('end', () => {
+			try {
+				// Run the mocha test
+				mocha.run((failures: number) => {
+					if (failures > 0) {
+						e(new Error(`${failures} tests failed.`));
+					} else {
+						c();
+					}
+				});
+			} catch (err) {
+				console.error(err);
+				e(err);
+			}
+		});
 	});
 }

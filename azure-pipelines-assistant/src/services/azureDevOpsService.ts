@@ -1,5 +1,5 @@
-import { IAzureDevOpsService, LogEntry, AzureDevOpsServiceConfig } from '../interfaces/azureDevOpsService';
-import { Project, Pipeline, PipelineRun, PipelineRunDetails, RunParameters } from '../models';
+import { IAzureDevOpsService, AzureDevOpsServiceConfig } from '../interfaces/azureDevOpsService';
+import { Project, Pipeline, PipelineRun, PipelineRunDetails, RunParameters, LogEntry } from '../models';
 import { ICacheService } from '../interfaces/cacheService';
 import { IApiClient } from '../interfaces/apiClient';
 

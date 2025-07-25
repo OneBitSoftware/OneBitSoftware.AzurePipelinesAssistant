@@ -70,7 +70,7 @@
   - Write unit tests for command registration and execution
   - _Requirements: 8.1, 8.2, 8.3, 8.5_
 
-- [ ] 9. Build run details webview
+- [x] 9. Build run details webview
   - Create RunDetailsWebviewProvider class with webview panel management
   - Generate HTML template for run details display with stage/job/task hierarchy
   - Implement real-time status updates for running pipelines
@@ -79,7 +79,12 @@
   - Write integration tests for webview creation and content generation
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 10. Implement log viewer webview
+- [x] 10. Implement log viewer webview
+
+
+
+
+
   - Create LogViewerWebviewProvider class for integrated log display
   - Generate HTML template with syntax highlighting and search functionality
   - Add log filtering capabilities by severity, keyword, and time range

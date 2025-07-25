@@ -37,6 +37,17 @@ export interface Issue {
   data?: Record<string, any>;
 }
 
+export interface LogEntry {
+  id: number;
+  timestamp: Date;
+  level: 'debug' | 'info' | 'warning' | 'error';
+  message: string;
+  source?: string;
+  lineNumber?: number;
+  jobId?: string;
+  taskId?: string;
+}
+
 export interface TimelineRecord {
   id: string;
   parentId?: string;

@@ -372,7 +372,7 @@ export class TaskTreeItem implements IAzurePipelinesTreeItem {
     
     this.tooltip = new vscode.MarkdownString(
       `**${data.displayName || data.name}**\n\n` +
-      `Task: ${data.task.name}@${data.task.version}\n` +
+      `Task: ${data.task?.name || data.name}@${data.task?.version || 'unknown'}\n` +
       `State: ${data.state}\n` +
       `Result: ${data.result || 'N/A'}\n` +
       `Started: ${startTime}\n` +

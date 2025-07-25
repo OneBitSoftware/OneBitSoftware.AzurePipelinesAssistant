@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { IAzureDevOpsService, IAuthenticationService } from '../interfaces';
 import { AzurePipelinesTreeDataProvider } from '../services/treeDataProvider';
+import { RunDetailsWebviewProvider } from '../webviews/runDetailsWebview';
+import { LogViewerWebviewProvider } from '../webviews/logViewerWebview';
 import { 
   ProjectTreeItem, 
   PipelineTreeItem, 
@@ -20,12 +22,18 @@ import {
  * Command handler class for Azure Pipelines Assistant
  */
 export class CommandHandler {
+  private runDetailsWebviewProvider: RunDetailsWebviewProvider;
+  private logViewerWebviewProvider: LogViewerWebviewProvider;
+
   constructor(
     private azureDevOpsService: IAzureDevOpsService,
     private authService: IAuthenticationService,
     private treeDataProvider: AzurePipelinesTreeDataProvider,
     private context: vscode.ExtensionContext
-  ) {}
+  ) {
+    this.runDetailsWebviewProvider = new RunDetailsWebviewProvider(context, azureDevOpsService);
+    this.logViewerWebviewProvider = new LogViewerWebviewProvider(context, azureDevOpsService);
+  }
 
   /**
    * Register all extension commands
@@ -256,22 +264,19 @@ export class CommandHandler {
     }
 
     try {
-      let runId: number;
-      let pipelineId: number;
-      let projectId: string;
+      let runItem: any;
 
       if (isPipelineRunTreeItem(item)) {
-        runId = item.data.id;
-        pipelineId = item.data.pipeline.id;
-        projectId = item.data.pipeline.project.id;
-      } else {
+        runItem = item;
+      } else if (isStageTreeItem(item) || isJobTreeItem(item)) {
         // For stages and jobs, we need to traverse up to find the run
-        vscode.window.showInformationMessage('Run details view will be implemented in the next task');
+        // This is a simplified approach - in a full implementation, we'd need proper parent references
+        vscode.window.showErrorMessage('Please select the pipeline run directly to view details');
         return;
       }
 
-      // This will be implemented in Task 9 (Build run details webview)
-      vscode.window.showInformationMessage(`Run details for #${runId} will be shown in webview (Task 9)`);
+      // Show the run details webview
+      await this.runDetailsWebviewProvider.showRunDetails(runItem);
       
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load run details: ${error}`);
@@ -279,14 +284,18 @@ export class CommandHandler {
   }
 
   private async viewLogs(item: any): Promise<void> {
-    if (!isPipelineRunTreeItem(item) && !isJobTreeItem(item) && !isTaskTreeItem(item)) {
-      vscode.window.showErrorMessage('Please select a run, job, or task to view logs');
+    if (!isPipelineRunTreeItem(item)) {
+      vscode.window.showErrorMessage('Please select a pipeline run to view logs');
       return;
     }
 
     try {
-      // This will be implemented in Task 10 (Implement log viewer webview)
-      vscode.window.showInformationMessage('Log viewer will be implemented in Task 10');
+      const runId = item.data.id;
+      const projectId = item.data.pipeline.project.id;
+      const pipelineId = item.data.pipeline.id;
+
+      // Show the log viewer webview
+      await this.logViewerWebviewProvider.showLogs(runId, projectId, pipelineId);
       
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load logs: ${error}`);

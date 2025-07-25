@@ -1,4 +1,4 @@
-import { Project, Pipeline, PipelineRun, PipelineRunDetails, RunParameters } from '../models';
+import { Project, Pipeline, PipelineRun, PipelineRunDetails, RunParameters, LogEntry } from '../models';
 
 /**
  * Interface for Azure DevOps service operations
@@ -122,17 +122,7 @@ export interface IAzureDevOpsService {
     clearCache(): Promise<void>;
 }
 
-/**
- * Log entry interface for pipeline logs
- */
-export interface LogEntry {
-    id: number;
-    timestamp: Date;
-    level: 'debug' | 'info' | 'warning' | 'error';
-    message: string;
-    source?: string;
-    lineNumber?: number;
-}
+
 
 /**
  * Service configuration interface
