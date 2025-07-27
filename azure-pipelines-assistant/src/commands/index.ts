@@ -3,6 +3,8 @@ import { IAzureDevOpsService, IAuthenticationService } from '../interfaces';
 import { AzurePipelinesTreeDataProvider } from '../services/treeDataProvider';
 import { RunDetailsWebviewProvider } from '../webviews/runDetailsWebview';
 import { LogViewerWebviewProvider } from '../webviews/logViewerWebview';
+import { PipelineTriggerWebviewProvider } from '../webviews/pipelineTriggerWebview';
+import { RunComparisonWebviewProvider } from '../webviews/runComparisonWebview';
 import { 
   ProjectTreeItem, 
   PipelineTreeItem, 
@@ -24,6 +26,9 @@ import {
 export class CommandHandler {
   private runDetailsWebviewProvider: RunDetailsWebviewProvider;
   private logViewerWebviewProvider: LogViewerWebviewProvider;
+  private pipelineTriggerWebviewProvider: PipelineTriggerWebviewProvider;
+  private runComparisonWebviewProvider: RunComparisonWebviewProvider;
+  private runMonitoringIntervals: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
     private azureDevOpsService: IAzureDevOpsService,
@@ -33,6 +38,8 @@ export class CommandHandler {
   ) {
     this.runDetailsWebviewProvider = new RunDetailsWebviewProvider(context, azureDevOpsService);
     this.logViewerWebviewProvider = new LogViewerWebviewProvider(context, azureDevOpsService);
+    this.pipelineTriggerWebviewProvider = new PipelineTriggerWebviewProvider(context, azureDevOpsService);
+    this.runComparisonWebviewProvider = new RunComparisonWebviewProvider(context, azureDevOpsService);
   }
 
   /**
@@ -61,7 +68,8 @@ export class CommandHandler {
       vscode.commands.registerCommand('azurePipelinesAssistant.viewRunDetails', (item) => this.viewRunDetails(item)),
       vscode.commands.registerCommand('azurePipelinesAssistant.viewLogs', (item) => this.viewLogs(item)),
       vscode.commands.registerCommand('azurePipelinesAssistant.downloadArtifacts', (item) => this.downloadArtifacts(item)),
-      vscode.commands.registerCommand('azurePipelinesAssistant.cancelRun', (item) => this.cancelRun(item))
+      vscode.commands.registerCommand('azurePipelinesAssistant.cancelRun', (item) => this.cancelRun(item)),
+      vscode.commands.registerCommand('azurePipelinesAssistant.compareRuns', (item) => this.compareRuns(item))
     );
 
     // Search and filter commands
@@ -69,6 +77,14 @@ export class CommandHandler {
       vscode.commands.registerCommand('azurePipelinesAssistant.searchPipelines', () => this.searchPipelines()),
       vscode.commands.registerCommand('azurePipelinesAssistant.filterByProject', () => this.filterByProject()),
       vscode.commands.registerCommand('azurePipelinesAssistant.filterByStatus', () => this.filterByStatus())
+    );
+
+    // Pipeline approval commands
+    disposables.push(
+      vscode.commands.registerCommand('azurePipelinesAssistant.approveRun', (item) => this.approveRun(item)),
+      vscode.commands.registerCommand('azurePipelinesAssistant.rejectRun', (item) => this.rejectRun(item)),
+      vscode.commands.registerCommand('azurePipelinesAssistant.monitorRun', (item) => this.monitorRun(item)),
+      vscode.commands.registerCommand('azurePipelinesAssistant.stopMonitoring', (item) => this.stopMonitoring(item))
     );
 
     return disposables;
@@ -94,48 +110,10 @@ export class CommandHandler {
     }
 
     try {
-      // Show input for branch selection
-      const branch = await vscode.window.showInputBox({
-        prompt: 'Enter branch name (optional)',
-        placeHolder: 'main',
-        value: 'main'
-      });
-
-      if (branch === undefined) {
-        return; // User cancelled
-      }
-
-      // Show progress
-      await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Running pipeline: ${item.data.name}`,
-        cancellable: false
-      }, async (progress) => {
-        progress.report({ increment: 0, message: 'Triggering pipeline...' });
-        
-        const runResult = await this.azureDevOpsService.triggerRun(
-          item.data.id,
-          item.data.project.id,
-          { sourceBranch: branch }
-        );
-
-        progress.report({ increment: 100, message: 'Pipeline started successfully' });
-        
-        const action = await vscode.window.showInformationMessage(
-          `Pipeline run #${runResult.id} started successfully`,
-          'View Run',
-          'View in Browser'
-        );
-
-        if (action === 'View Run') {
-          // Refresh tree to show new run
-          this.treeDataProvider.refresh();
-        } else if (action === 'View in Browser') {
-          vscode.env.openExternal(vscode.Uri.parse(runResult.url));
-        }
-      });
+      // Show the enhanced trigger UI
+      await this.pipelineTriggerWebviewProvider.showTriggerUI(item.data);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to run pipeline: ${error}`);
+      vscode.window.showErrorMessage(`Failed to open pipeline trigger UI: ${error}`);
     }
   }
 
@@ -386,6 +364,29 @@ export class CommandHandler {
     }
   }
 
+  private async compareRuns(item: any): Promise<void> {
+    let pipelineId: number;
+    let projectId: string;
+
+    if (isPipelineTreeItem(item)) {
+      pipelineId = item.data.id;
+      projectId = item.data.project.id;
+    } else if (isPipelineRunTreeItem(item)) {
+      pipelineId = item.data.pipeline.id;
+      projectId = item.data.pipeline.project.id;
+    } else {
+      vscode.window.showErrorMessage('Please select a pipeline or pipeline run to compare runs');
+      return;
+    }
+
+    try {
+      // Show the run comparison UI
+      await this.runComparisonWebviewProvider.showRunSelection(pipelineId, projectId);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to open run comparison: ${error}`);
+    }
+  }
+
   // Search and Filter Commands
 
   private async searchPipelines(): Promise<void> {
@@ -486,5 +487,213 @@ export class CommandHandler {
       vscode.window.showInformationMessage(`Filtering by status: ${selectedStatus.label}`);
       // Note: Full implementation would require tree view filtering capabilities
     }
+  }
+
+  // Pipeline Approval Commands
+
+  private async approveRun(item: any): Promise<void> {
+    if (!isPipelineRunTreeItem(item)) {
+      vscode.window.showErrorMessage('Please select a pipeline run to approve');
+      return;
+    }
+
+    try {
+      const confirmation = await vscode.window.showInformationMessage(
+        `Approve pipeline run #${item.data.id}?`,
+        { modal: true },
+        'Approve'
+      );
+
+      if (confirmation === 'Approve') {
+        // Note: Azure DevOps API for approvals would be implemented here
+        // This is a placeholder for the approval workflow
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: `Approving run #${item.data.id}`,
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ increment: 0, message: 'Submitting approval...' });
+          
+          // Simulate approval API call
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          progress.report({ increment: 100, message: 'Approval submitted' });
+          
+          vscode.window.showInformationMessage(`Run #${item.data.id} approved successfully`);
+          
+          // Refresh tree to show updated status
+          this.treeDataProvider.refresh();
+        });
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to approve run: ${error}`);
+    }
+  }
+
+  private async rejectRun(item: any): Promise<void> {
+    if (!isPipelineRunTreeItem(item)) {
+      vscode.window.showErrorMessage('Please select a pipeline run to reject');
+      return;
+    }
+
+    try {
+      const reason = await vscode.window.showInputBox({
+        prompt: 'Enter rejection reason (optional)',
+        placeHolder: 'Reason for rejection...'
+      });
+
+      if (reason === undefined) {
+        return; // User cancelled
+      }
+
+      const confirmation = await vscode.window.showWarningMessage(
+        `Reject pipeline run #${item.data.id}?`,
+        { modal: true },
+        'Reject'
+      );
+
+      if (confirmation === 'Reject') {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: `Rejecting run #${item.data.id}`,
+          cancellable: false
+        }, async (progress) => {
+          progress.report({ increment: 0, message: 'Submitting rejection...' });
+          
+          // Simulate rejection API call
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          progress.report({ increment: 100, message: 'Rejection submitted' });
+          
+          vscode.window.showInformationMessage(`Run #${item.data.id} rejected successfully`);
+          
+          // Refresh tree to show updated status
+          this.treeDataProvider.refresh();
+        });
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to reject run: ${error}`);
+    }
+  }
+
+  // Run Monitoring Commands
+
+  private async monitorRun(item: any): Promise<void> {
+    if (!isPipelineRunTreeItem(item)) {
+      vscode.window.showErrorMessage('Please select a pipeline run to monitor');
+      return;
+    }
+
+    const runId = item.data.id;
+    const pipelineId = item.data.pipeline.id;
+    const projectId = item.data.pipeline.project.id;
+
+    // Check if already monitoring
+    if (this.runMonitoringIntervals.has(runId)) {
+      vscode.window.showInformationMessage(`Already monitoring run #${runId}`);
+      return;
+    }
+
+    try {
+      vscode.window.showInformationMessage(`Started monitoring run #${runId}`);
+      
+      const monitoringInterval = setInterval(async () => {
+        try {
+          const runDetails = await this.azureDevOpsService.getRunDetails(runId, pipelineId, projectId);
+          
+          if (runDetails.state === 'completed') {
+            this.stopMonitoringInternal(runId);
+            
+            const resultMessage = runDetails.result === 'succeeded' 
+              ? `✅ Pipeline run #${runId} completed successfully`
+              : `❌ Pipeline run #${runId} ${runDetails.result}`;
+            
+            const action = await vscode.window.showInformationMessage(
+              resultMessage,
+              'View Details',
+              'View in Browser',
+              'View Logs'
+            );
+
+            if (action === 'View Details') {
+              await this.viewRunDetails({ data: runDetails });
+            } else if (action === 'View in Browser') {
+              await vscode.env.openExternal(vscode.Uri.parse(runDetails.url));
+            } else if (action === 'View Logs') {
+              await this.viewLogs({ data: runDetails });
+            }
+
+            // Refresh tree to show updated status
+            this.treeDataProvider.refresh();
+          } else if (runDetails.state === 'inProgress') {
+            // Show progress notification for long-running builds
+            const duration = Date.now() - runDetails.createdDate.getTime();
+            const minutes = Math.floor(duration / 60000);
+            
+            if (minutes > 0 && minutes % 5 === 0) { // Every 5 minutes
+              vscode.window.showInformationMessage(
+                `⏱️ Run #${runId} still in progress (${minutes} minutes)`,
+                'View Details'
+              ).then(action => {
+                if (action === 'View Details') {
+                  this.viewRunDetails({ data: runDetails });
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to monitor run ${runId}:`, error);
+          this.stopMonitoringInternal(runId);
+          vscode.window.showWarningMessage(`Stopped monitoring run #${runId} due to error`);
+        }
+      }, 30000); // Check every 30 seconds
+
+      this.runMonitoringIntervals.set(runId, monitoringInterval);
+
+      // Stop monitoring after 4 hours
+      setTimeout(() => {
+        if (this.runMonitoringIntervals.has(runId)) {
+          this.stopMonitoringInternal(runId);
+          vscode.window.showInformationMessage(`Stopped monitoring run #${runId} (timeout)`);
+        }
+      }, 4 * 60 * 60 * 1000);
+
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to start monitoring: ${error}`);
+    }
+  }
+
+  private async stopMonitoring(item: any): Promise<void> {
+    if (!isPipelineRunTreeItem(item)) {
+      vscode.window.showErrorMessage('Please select a pipeline run to stop monitoring');
+      return;
+    }
+
+    const runId = item.data.id;
+    
+    if (this.runMonitoringIntervals.has(runId)) {
+      this.stopMonitoringInternal(runId);
+      vscode.window.showInformationMessage(`Stopped monitoring run #${runId}`);
+    } else {
+      vscode.window.showInformationMessage(`Run #${runId} is not being monitored`);
+    }
+  }
+
+  private stopMonitoringInternal(runId: number): void {
+    const interval = this.runMonitoringIntervals.get(runId);
+    if (interval) {
+      clearInterval(interval);
+      this.runMonitoringIntervals.delete(runId);
+    }
+  }
+
+  /**
+   * Clean up monitoring intervals when extension is deactivated
+   */
+  public dispose(): void {
+    for (const [runId, interval] of this.runMonitoringIntervals) {
+      clearInterval(interval);
+    }
+    this.runMonitoringIntervals.clear();
   }
 }

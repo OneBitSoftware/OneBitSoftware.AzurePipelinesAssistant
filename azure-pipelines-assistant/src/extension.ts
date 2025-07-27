@@ -60,7 +60,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		const commandDisposables = commandHandler.registerCommands();
 		
 		// Add disposables to context
-		context.subscriptions.push(treeView, ...commandDisposables);
+		context.subscriptions.push(
+			treeView, 
+			...commandDisposables,
+			// Add command handler disposal
+			{ dispose: () => commandHandler.dispose() }
+		);
 		
 		// Set initial context for when clause evaluation
 		const isConfigured = authService.isAuthenticated();

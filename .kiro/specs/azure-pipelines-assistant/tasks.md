@@ -80,11 +80,6 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5_
 
 - [x] 10. Implement log viewer webview
-
-
-
-
-
   - Create LogViewerWebviewProvider class for integrated log display
   - Generate HTML template with syntax highlighting and search functionality
   - Add log filtering capabilities by severity, keyword, and time range
@@ -93,7 +88,7 @@
   - Write integration tests for log viewer functionality
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 11. Add pipeline triggering functionality
+- [x] 11. Add pipeline triggering functionality
   - Implement pipeline run triggering with parameter specification (branch, variables)
   - Create UI for run parameter input and validation
   - Add confirmation dialogs and success notifications with run ID and links
@@ -102,7 +97,12 @@
   - Write integration tests for pipeline triggering workflow
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 12. Implement run comparison functionality
+- [x] 12. Implement run comparison functionality
+
+
+
+
+
   - Create run comparison UI that allows selecting multiple runs for comparison
   - Implement side-by-side comparison view showing differences in timing, results, and stages
   - Add comparison metrics and statistics display

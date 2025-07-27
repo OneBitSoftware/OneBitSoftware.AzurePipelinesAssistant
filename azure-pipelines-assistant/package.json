@@ -93,6 +93,31 @@
         "command": "azurePipelinesAssistant.cancelRun",
         "title": "Cancel Run",
         "icon": "$(stop)"
+      },
+      {
+        "command": "azurePipelinesAssistant.approveRun",
+        "title": "Approve Run",
+        "icon": "$(check)"
+      },
+      {
+        "command": "azurePipelinesAssistant.rejectRun",
+        "title": "Reject Run",
+        "icon": "$(x)"
+      },
+      {
+        "command": "azurePipelinesAssistant.monitorRun",
+        "title": "Monitor Run",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "azurePipelinesAssistant.stopMonitoring",
+        "title": "Stop Monitoring",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "azurePipelinesAssistant.compareRuns",
+        "title": "Compare Runs",
+        "icon": "$(diff)"
       }
     ],
     "menus": {
@@ -135,6 +160,11 @@
           "group": "pipeline"
         },
         {
+          "command": "azurePipelinesAssistant.compareRuns",
+          "when": "view == azurePipelinesExplorer && viewItem =~ /^(pipeline|run)$/",
+          "group": "pipeline"
+        },
+        {
           "command": "azurePipelinesAssistant.viewRunDetails",
           "when": "view == azurePipelinesExplorer && viewItem == run",
           "group": "run"
@@ -153,6 +183,26 @@
           "command": "azurePipelinesAssistant.cancelRun",
           "when": "view == azurePipelinesExplorer && viewItem == run && azurePipelinesAssistant.canCancel",
           "group": "run"
+        },
+        {
+          "command": "azurePipelinesAssistant.approveRun",
+          "when": "view == azurePipelinesExplorer && viewItem == run && azurePipelinesAssistant.needsApproval",
+          "group": "approval"
+        },
+        {
+          "command": "azurePipelinesAssistant.rejectRun",
+          "when": "view == azurePipelinesExplorer && viewItem == run && azurePipelinesAssistant.needsApproval",
+          "group": "approval"
+        },
+        {
+          "command": "azurePipelinesAssistant.monitorRun",
+          "when": "view == azurePipelinesExplorer && viewItem == run && !azurePipelinesAssistant.isMonitoring",
+          "group": "monitoring"
+        },
+        {
+          "command": "azurePipelinesAssistant.stopMonitoring",
+          "when": "view == azurePipelinesExplorer && viewItem == run && azurePipelinesAssistant.isMonitoring",
+          "group": "monitoring"
         }
       ],
       "commandPalette": [
@@ -241,7 +291,8 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "node run-specific-tests.js"
+    "test": "node run-specific-tests.js",
+    "test:pipeline-trigger": "node run-pipeline-trigger-tests.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

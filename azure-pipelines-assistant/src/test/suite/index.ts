@@ -21,7 +21,9 @@ export function run(): Promise<void> {
 			'treeDataProvider.test.js', 
 			'treeItems.test.js',
 			'commands.test.js',
-			'runDetailsWebview.test.js'
+			'runDetailsWebview.test.js',
+			'runComparisonSimple.test.js',
+			'runComparisonWebview.test.js'
 		];
 
 		testFileStream.on('data', (file) => {

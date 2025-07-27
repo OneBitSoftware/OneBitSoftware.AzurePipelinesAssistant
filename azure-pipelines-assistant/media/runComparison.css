@@ -1,0 +1,685 @@
+/* Run Comparison Webview Styles */
+
+:root {
+  --vscode-font-family: var(--vscode-font-family);
+  --vscode-font-size: var(--vscode-font-size);
+  --vscode-font-weight: var(--vscode-font-weight);
+  
+  /* Status colors */
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+  --neutral-color: #6c757d;
+  --running-color: #007bff;
+  --pending-color: #6f42c1;
+  --canceled-color: #fd7e14;
+  
+  /* Comparison colors */
+  --improvement-color: #28a745;
+  --regression-color: #dc3545;
+  --neutral-change-color: #6c757d;
+  
+  /* Background colors */
+  --improvement-bg: rgba(40, 167, 69, 0.1);
+  --regression-bg: rgba(220, 53, 69, 0.1);
+  --neutral-bg: rgba(108, 117, 125, 0.1);
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  border-bottom: 1px solid var(--vscode-panel-border);
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  margin: 0 0 15px 0;
+  color: var(--vscode-foreground);
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.comparison-header {
+  margin-top: 15px;
+}
+
+.run-summary {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.run-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.run-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.2em;
+  color: var(--vscode-foreground);
+}
+
+.run-meta {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.vs {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--vscode-descriptionForeground);
+  padding: 0 10px;
+}
+
+/* Actions */
+.actions {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.export-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Selection Section */
+.selection-section {
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.selection-instructions {
+  margin-bottom: 15px;
+}
+
+.selection-instructions p {
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
+  color: var(--vscode-foreground);
+}
+
+.selection-status {
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground);
+}
+
+/* Buttons */
+.btn {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.btn:disabled {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.btn-secondary {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Run List */
+.runs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.run-item {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--vscode-editor-background);
+}
+
+.run-item:hover {
+  border-color: var(--vscode-focusBorder);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.run-item.selected {
+  border-color: var(--vscode-textLink-foreground);
+  background-color: var(--vscode-list-activeSelectionBackground);
+}
+
+.run-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.run-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.run-id {
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground);
+}
+
+.run-name {
+  color: var(--vscode-foreground);
+}
+
+.run-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+.detail-item {
+  display: flex;
+  gap: 5px;
+}
+
+.detail-item label {
+  color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.run-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Section */
+.section {
+  margin-bottom: 40px;
+}
+
+.section h2 {
+  margin: 0 0 20px 0;
+  color: var(--vscode-foreground);
+  font-size: 1.4em;
+  font-weight: 600;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  padding-bottom: 8px;
+}
+
+/* Summary Card */
+.summary-card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 20px;
+  background-color: var(--vscode-editor-background);
+}
+
+.summary-card.improved {
+  border-left: 4px solid var(--improvement-color);
+  background-color: var(--improvement-bg);
+}
+
+.summary-card.degraded {
+  border-left: 4px solid var(--regression-color);
+  background-color: var(--regression-bg);
+}
+
+.summary-card.mixed {
+  border-left: 4px solid var(--warning-color);
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.summary-card.identical {
+  border-left: 4px solid var(--neutral-change-color);
+  background-color: var(--neutral-bg);
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.summary-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.summary-icon.improved::before {
+  content: "✓";
+  color: var(--improvement-color);
+  font-weight: bold;
+}
+
+.summary-icon.degraded::before {
+  content: "✗";
+  color: var(--regression-color);
+  font-weight: bold;
+}
+
+.summary-icon.mixed::before {
+  content: "~";
+  color: var(--warning-color);
+  font-weight: bold;
+}
+
+.summary-icon.identical::before {
+  content: "=";
+  color: var(--neutral-change-color);
+  font-weight: bold;
+}
+
+.summary-text {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.summary-section {
+  margin-bottom: 15px;
+}
+
+.summary-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 1em;
+  color: var(--vscode-foreground);
+}
+
+.summary-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.summary-section li {
+  margin-bottom: 4px;
+}
+
+.summary-section li.improvement {
+  color: var(--improvement-color);
+}
+
+.summary-section li.regression {
+  color: var(--regression-color);
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.metric-card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 15px;
+  background-color: var(--vscode-editor-background);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.metric-title {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.metric-change {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.metric-change.improvement {
+  color: var(--improvement-color);
+}
+
+.metric-change.regression {
+  color: var(--regression-color);
+}
+
+.metric-change.neutral {
+  color: var(--neutral-change-color);
+}
+
+.metric-values {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.metric-value {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+}
+
+.metric-value label {
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Comparison Table */
+.comparison-table {
+  overflow-x: auto;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+}
+
+.comparison-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--vscode-editor-background);
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 0.9em;
+}
+
+.comparison-table th {
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  position: sticky;
+  top: 0;
+}
+
+.comparison-table tr:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+/* Status indicators */
+.status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status.completed.succeeded {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: var(--success-color);
+}
+
+.status.completed.failed {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: var(--error-color);
+}
+
+.status.completed.canceled {
+  background-color: rgba(253, 126, 20, 0.2);
+  color: var(--canceled-color);
+}
+
+.status.inProgress {
+  background-color: rgba(0, 123, 255, 0.2);
+  color: var(--running-color);
+}
+
+.status.pending {
+  background-color: rgba(111, 66, 193, 0.2);
+  color: var(--pending-color);
+}
+
+.status-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.both {
+  background-color: var(--neutral-bg);
+  color: var(--neutral-change-color);
+}
+
+.status-badge.different {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: var(--warning-color);
+}
+
+.status-badge.only-first {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: var(--error-color);
+}
+
+.status-badge.only-second {
+  background-color: rgba(23, 162, 184, 0.2);
+  color: var(--info-color);
+}
+
+.status-badge.identical {
+  background-color: var(--improvement-bg);
+  color: var(--improvement-color);
+}
+
+/* Table row status colors */
+.comparison-table tr.status-both {
+  background-color: rgba(108, 117, 125, 0.05);
+}
+
+.comparison-table tr.status-different {
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.comparison-table tr.status-only-first {
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.comparison-table tr.status-only-second {
+  background-color: rgba(23, 162, 184, 0.05);
+}
+
+.comparison-table tr.status-identical {
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+/* Change indicators in table */
+.comparison-table .improvement {
+  color: var(--improvement-color);
+  font-weight: 600;
+}
+
+.comparison-table .regression {
+  color: var(--regression-color);
+  font-weight: 600;
+}
+
+.comparison-table .neutral {
+  color: var(--neutral-change-color);
+}
+
+/* Icons */
+.icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.icon.success::before {
+  content: "✓";
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+.icon.error::before {
+  content: "✗";
+  color: var(--error-color);
+  font-weight: bold;
+}
+
+.icon.warning::before {
+  content: "⚠";
+  color: var(--warning-color);
+  font-weight: bold;
+}
+
+.icon.running::before {
+  content: "⟳";
+  color: var(--running-color);
+  font-weight: bold;
+  animation: spin 2s linear infinite;
+}
+
+.icon.pending::before {
+  content: "⏸";
+  color: var(--pending-color);
+  font-weight: bold;
+}
+
+.icon.canceled::before {
+  content: "⏹";
+  color: var(--canceled-color);
+  font-weight: bold;
+}
+
+.icon.refresh::before {
+  content: "↻";
+  font-weight: bold;
+}
+
+.icon.download::before {
+  content: "⬇";
+  font-weight: bold;
+}
+
+.icon.external::before {
+  content: "↗";
+  font-weight: bold;
+}
+
+.icon.info::before {
+  content: "ℹ";
+  font-weight: bold;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .run-summary {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .vs {
+    align-self: center;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .export-actions {
+    justify-content: center;
+  }
+  
+  .run-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .run-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .comparison-table {
+    font-size: 0.8em;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 6px 8px;
+  }
+  
+  .run-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .export-actions {
+    flex-direction: column;
+  }
+}

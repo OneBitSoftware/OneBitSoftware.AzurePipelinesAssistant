@@ -10,3 +10,4 @@ export * from './pipelineRun';
 
 // Tree view data structures
 export * from './treeItems';
+export * from './runComparison';

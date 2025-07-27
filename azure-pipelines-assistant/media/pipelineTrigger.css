@@ -1,0 +1,256 @@
+/* Pipeline Trigger UI Styles */
+body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+header h1 {
+    margin: 0 0 15px 0;
+    color: var(--vscode-titleBar-activeForeground);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.pipeline-info h2 {
+    margin: 0 0 8px 0;
+    color: var(--vscode-foreground);
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.project-name, .pipeline-path {
+    margin: 4px 0;
+    color: var(--vscode-descriptionForeground);
+    font-size: 14px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: var(--vscode-editor-inactiveSelectionBackground);
+    border-radius: 6px;
+    border: 1px solid var(--vscode-panel-border);
+}
+
+.form-section h3 {
+    margin: 0 0 15px 0;
+    color: var(--vscode-foreground);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-weight: 500;
+    color: var(--vscode-foreground);
+}
+
+input[type="text"], textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+}
+
+input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+input[type="text"]::placeholder, textarea::placeholder {
+    color: var(--vscode-input-placeholderForeground);
+}
+
+/* Variables section */
+.variables-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.variable-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.variable-name, .variable-value {
+    flex: 1;
+}
+
+.remove-variable {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-variable:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.add-button {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+    align-self: flex-start;
+}
+
+.add-button:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* Template parameters */
+.template-params-container textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+}
+
+/* Form actions */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.cancel-button {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.cancel-button:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.trigger-button {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trigger-button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.trigger-button:disabled {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Validation errors */
+.validation-errors {
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 15px;
+}
+
+.validation-errors ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--vscode-inputValidation-errorForeground);
+}
+
+.validation-errors li {
+    margin-bottom: 4px;
+}
+
+/* Success message */
+.success-message {
+    background-color: var(--vscode-inputValidation-infoBackground);
+    border: 1px solid var(--vscode-inputValidation-infoBorder);
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 15px;
+    color: var(--vscode-inputValidation-infoForeground);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .variable-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .cancel-button, .trigger-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
