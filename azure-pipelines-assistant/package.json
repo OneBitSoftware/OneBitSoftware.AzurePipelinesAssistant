@@ -35,7 +35,8 @@
     "viewsWelcome": [
       {
         "view": "azurePipelinesExplorer",
-        "contents": "Welcome to Azure Pipelines Assistant!\n\nTo get started, configure your Azure DevOps organization and Personal Access Token.\n\n[Configure Extension](command:azurePipelinesAssistant.configure)\n\nNeed help? [View Documentation](https://docs.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/pats)"
+        "contents": "Welcome to Azure Pipelines Assistant!\n\nTo get started, configure your Azure DevOps organization and Personal Access Token.\n\n[Configure Extension](command:azurePipelinesAssistant.configure)\n\n[Show Welcome Guide](command:azurePipelinesAssistant.showWelcome)\n\nNeed help? [View Documentation](https://docs.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/pats)",
+        "when": "!azurePipelinesAssistant.configured"
       }
     ],
     "commands": [
@@ -118,6 +119,36 @@
         "command": "azurePipelinesAssistant.compareRuns",
         "title": "Compare Runs",
         "icon": "$(diff)"
+      },
+      {
+        "command": "azurePipelinesAssistant.resetConfiguration",
+        "title": "Reset Configuration",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "azurePipelinesAssistant.exportConfiguration",
+        "title": "Export Configuration",
+        "icon": "$(export)"
+      },
+      {
+        "command": "azurePipelinesAssistant.importConfiguration",
+        "title": "Import Configuration",
+        "icon": "$(import)"
+      },
+      {
+        "command": "azurePipelinesAssistant.openSettings",
+        "title": "Open Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "azurePipelinesAssistant.validateConfiguration",
+        "title": "Validate Configuration",
+        "icon": "$(check)"
+      },
+      {
+        "command": "azurePipelinesAssistant.showWelcome",
+        "title": "Show Welcome",
+        "icon": "$(home)"
       }
     ],
     "menus": {
@@ -223,6 +254,30 @@
           "command": "azurePipelinesAssistant.viewInBrowser",
           "title": "Azure Pipelines: View in Browser",
           "when": "false"
+        },
+        {
+          "command": "azurePipelinesAssistant.resetConfiguration",
+          "title": "Azure Pipelines: Reset Configuration"
+        },
+        {
+          "command": "azurePipelinesAssistant.exportConfiguration",
+          "title": "Azure Pipelines: Export Configuration"
+        },
+        {
+          "command": "azurePipelinesAssistant.importConfiguration",
+          "title": "Azure Pipelines: Import Configuration"
+        },
+        {
+          "command": "azurePipelinesAssistant.openSettings",
+          "title": "Azure Pipelines: Open Settings"
+        },
+        {
+          "command": "azurePipelinesAssistant.validateConfiguration",
+          "title": "Azure Pipelines: Validate Configuration"
+        },
+        {
+          "command": "azurePipelinesAssistant.showWelcome",
+          "title": "Azure Pipelines: Show Welcome"
         }
       ]
     },
@@ -231,12 +286,15 @@
       "properties": {
         "azurePipelinesAssistant.organization": {
           "type": "string",
-          "description": "Azure DevOps organization name",
+          "description": "Azure DevOps organization name (e.g., 'myorg' for https://dev.azure.com/myorg)",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$",
+          "patternErrorMessage": "Organization name must contain only letters, numbers, and hyphens, and cannot start or end with a hyphen",
           "order": 1
         },
         "azurePipelinesAssistant.personalAccessToken": {
           "type": "string",
-          "description": "Personal Access Token for Azure DevOps (stored securely)",
+          "description": "Personal Access Token for Azure DevOps (Note: This setting is deprecated - tokens are now stored securely)",
+          "deprecationMessage": "This setting is deprecated. Use the 'Configure Azure DevOps' command to set your token securely.",
           "order": 2
         },
         "azurePipelinesAssistant.refreshInterval": {
@@ -244,7 +302,7 @@
           "default": 30,
           "minimum": 10,
           "maximum": 300,
-          "description": "Auto-refresh interval in seconds",
+          "description": "Auto-refresh interval in seconds for pipeline data",
           "order": 3
         },
         "azurePipelinesAssistant.maxRunsPerPipeline": {
@@ -252,7 +310,7 @@
           "default": 10,
           "minimum": 1,
           "maximum": 50,
-          "description": "Maximum number of runs to show per pipeline",
+          "description": "Maximum number of recent runs to display per pipeline",
           "order": 4
         },
         "azurePipelinesAssistant.showTimestamps": {
@@ -264,7 +322,7 @@
         "azurePipelinesAssistant.autoRefresh": {
           "type": "boolean",
           "default": true,
-          "description": "Enable automatic refresh of pipeline data",
+          "description": "Enable automatic refresh of pipeline data in the background",
           "order": 6
         },
         "azurePipelinesAssistant.favoriteProjects": {
@@ -273,8 +331,56 @@
             "type": "string"
           },
           "default": [],
-          "description": "List of favorite project IDs",
+          "description": "List of favorite project IDs for quick access",
           "order": 7
+        },
+        "azurePipelinesAssistant.favoritePipelines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "projectId": {
+                "type": "string"
+              },
+              "pipelineId": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": ["projectId", "pipelineId", "name"]
+          },
+          "default": [],
+          "description": "List of favorite pipelines for quick access",
+          "order": 8
+        },
+        "azurePipelinesAssistant.cacheTimeout": {
+          "type": "number",
+          "default": 300,
+          "minimum": 60,
+          "maximum": 3600,
+          "description": "Cache timeout in seconds for API responses",
+          "order": 9
+        },
+        "azurePipelinesAssistant.logLevel": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug"],
+          "default": "info",
+          "description": "Logging level for extension diagnostics",
+          "order": 10
+        },
+        "azurePipelinesAssistant.showWelcomeOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show welcome message when extension starts and is not configured",
+          "order": 11
+        },
+        "azurePipelinesAssistant.compactView": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use compact view in the pipeline tree to show more items",
+          "order": 12
         }
       }
     }

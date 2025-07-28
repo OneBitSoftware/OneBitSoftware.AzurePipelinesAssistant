@@ -4,6 +4,9 @@ import { AzurePipelinesTreeDataProvider } from './services/treeDataProvider';
 import { AuthenticationService } from './services/authenticationService';
 import { AzureDevOpsService } from './services/azureDevOpsService';
 import { CacheService } from './services/cacheService';
+import { ConfigurationService } from './services/configurationService';
+import { ConfigurationChangeHandler } from './services/configurationChangeHandler';
+import { StatusBarService } from './services/statusBarService';
 import { CommandHandler } from './commands';
 
 /**
@@ -16,6 +19,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		// Initialize services
 		const authService = new AuthenticationService(context);
 		const cacheService = new CacheService();
+		const configService = new ConfigurationService(context);
+		const configChangeHandler = new ConfigurationChangeHandler(configService, context);
 		
 		// Create API client (will be implemented in next task)
 		// For now, we'll pass authService as a placeholder
@@ -32,6 +37,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			}
 		);
 		
+		// Create status bar service
+		const statusBarService = new StatusBarService(
+			authService,
+			azureDevOpsService,
+			context
+		);
+		statusBarService.initialize();
+
 		// Create tree data provider
 		const treeDataProvider = new AzurePipelinesTreeDataProvider(
 			azureDevOpsService,
@@ -53,16 +66,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		const commandHandler = new CommandHandler(
 			azureDevOpsService,
 			authService,
+			configService,
 			treeDataProvider,
-			context
+			context,
+			statusBarService
 		);
 		
 		const commandDisposables = commandHandler.registerCommands();
 		
+		// Initialize configuration contexts
+		await configChangeHandler.initializeContexts();
+
 		// Add disposables to context
 		context.subscriptions.push(
 			treeView, 
 			...commandDisposables,
+			configService,
+			configChangeHandler,
+			statusBarService,
 			// Add command handler disposal
 			{ dispose: () => commandHandler.dispose() }
 		);

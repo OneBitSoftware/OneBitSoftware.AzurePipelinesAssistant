@@ -23,7 +23,8 @@ export function run(): Promise<void> {
 			'commands.test.js',
 			'runDetailsWebview.test.js',
 			'runComparisonSimple.test.js',
-			'runComparisonWebview.test.js'
+			'runComparisonWebview.test.js',
+			'statusBarService.test.js'
 		];
 
 		testFileStream.on('data', (file) => {

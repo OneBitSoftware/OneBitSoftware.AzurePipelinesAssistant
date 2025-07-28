@@ -1,10 +1,13 @@
 import * as vscode from 'vscode';
 import { IAzureDevOpsService, IAuthenticationService } from '../interfaces';
+import { IConfigurationService } from '../services/configurationService';
+import { IStatusBarService } from '../services/statusBarService';
 import { AzurePipelinesTreeDataProvider } from '../services/treeDataProvider';
 import { RunDetailsWebviewProvider } from '../webviews/runDetailsWebview';
 import { LogViewerWebviewProvider } from '../webviews/logViewerWebview';
 import { PipelineTriggerWebviewProvider } from '../webviews/pipelineTriggerWebview';
 import { RunComparisonWebviewProvider } from '../webviews/runComparisonWebview';
+import { ConfigurationCommands } from './configurationCommands';
 import { 
   ProjectTreeItem, 
   PipelineTreeItem, 
@@ -28,18 +31,22 @@ export class CommandHandler {
   private logViewerWebviewProvider: LogViewerWebviewProvider;
   private pipelineTriggerWebviewProvider: PipelineTriggerWebviewProvider;
   private runComparisonWebviewProvider: RunComparisonWebviewProvider;
+  private configurationCommands: ConfigurationCommands;
   private runMonitoringIntervals: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
     private azureDevOpsService: IAzureDevOpsService,
     private authService: IAuthenticationService,
+    private configService: IConfigurationService,
     private treeDataProvider: AzurePipelinesTreeDataProvider,
-    private context: vscode.ExtensionContext
+    private context: vscode.ExtensionContext,
+    private statusBarService?: IStatusBarService
   ) {
     this.runDetailsWebviewProvider = new RunDetailsWebviewProvider(context, azureDevOpsService);
     this.logViewerWebviewProvider = new LogViewerWebviewProvider(context, azureDevOpsService);
     this.pipelineTriggerWebviewProvider = new PipelineTriggerWebviewProvider(context, azureDevOpsService);
     this.runComparisonWebviewProvider = new RunComparisonWebviewProvider(context, azureDevOpsService);
+    this.configurationCommands = new ConfigurationCommands(configService, authService, context);
   }
 
   /**
@@ -47,6 +54,9 @@ export class CommandHandler {
    */
   registerCommands(): vscode.Disposable[] {
     const disposables: vscode.Disposable[] = [];
+
+    // Register configuration commands
+    this.configurationCommands.registerCommands(this.context);
 
     // Basic commands
     disposables.push(
@@ -98,7 +108,8 @@ export class CommandHandler {
   }
 
   private async configure(): Promise<void> {
-    await vscode.commands.executeCommand('workbench.action.openSettings', 'azurePipelinesAssistant');
+    // Use the configuration wizard instead of just opening settings
+    await vscode.commands.executeCommand('azurePipelinesAssistant.configure');
   }
 
   // Pipeline Commands
@@ -112,6 +123,9 @@ export class CommandHandler {
     try {
       // Show the enhanced trigger UI
       await this.pipelineTriggerWebviewProvider.showTriggerUI(item.data);
+      
+      // Note: The status bar will be updated when the pipeline run is actually triggered
+      // This would be handled by the trigger webview provider
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to open pipeline trigger UI: ${error}`);
     }
@@ -597,9 +611,19 @@ export class CommandHandler {
     try {
       vscode.window.showInformationMessage(`Started monitoring run #${runId}`);
       
+      // Update status bar to show the monitored run
+      if (this.statusBarService) {
+        this.statusBarService.updatePipelineRunStatus(item.data);
+      }
+      
       const monitoringInterval = setInterval(async () => {
         try {
           const runDetails = await this.azureDevOpsService.getRunDetails(runId, pipelineId, projectId);
+          
+          // Update status bar with latest run details
+          if (this.statusBarService) {
+            this.statusBarService.updatePipelineRunStatus(runDetails);
+          }
           
           if (runDetails.state === 'completed') {
             this.stopMonitoringInternal(runId);
@@ -645,6 +669,11 @@ export class CommandHandler {
           console.warn(`Failed to monitor run ${runId}:`, error);
           this.stopMonitoringInternal(runId);
           vscode.window.showWarningMessage(`Stopped monitoring run #${runId} due to error`);
+          
+          // Clear status bar on error
+          if (this.statusBarService) {
+            this.statusBarService.clearPipelineRunStatus();
+          }
         }
       }, 30000); // Check every 30 seconds
 
@@ -674,6 +703,11 @@ export class CommandHandler {
     if (this.runMonitoringIntervals.has(runId)) {
       this.stopMonitoringInternal(runId);
       vscode.window.showInformationMessage(`Stopped monitoring run #${runId}`);
+      
+      // Clear status bar when stopping monitoring
+      if (this.statusBarService) {
+        this.statusBarService.clearPipelineRunStatus();
+      }
     } else {
       vscode.window.showInformationMessage(`Run #${runId} is not being monitored`);
     }
@@ -684,6 +718,11 @@ export class CommandHandler {
     if (interval) {
       clearInterval(interval);
       this.runMonitoringIntervals.delete(runId);
+    }
+    
+    // Clear status bar when stopping monitoring internally
+    if (this.statusBarService) {
+      this.statusBarService.clearPipelineRunStatus();
     }
   }
 

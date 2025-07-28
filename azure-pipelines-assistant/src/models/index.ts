@@ -8,6 +8,9 @@ export * from './stage';
 export * from './pipeline';
 export * from './pipelineRun';
 
+// Configuration models
+export * from './configuration';
+
 // Tree view data structures
 export * from './treeItems';
 export * from './runComparison';

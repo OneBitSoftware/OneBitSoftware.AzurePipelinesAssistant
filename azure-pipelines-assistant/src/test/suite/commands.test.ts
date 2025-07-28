@@ -123,10 +123,20 @@ suite('Command Handler Test Suite', () => {
       }
     } as any;
 
+    // Create mock configuration service
+    const mockConfigService = {
+      getConfiguration: sinon.stub(),
+      isConfigured: sinon.stub().resolves(true),
+      getOrganization: sinon.stub().returns('testorg'),
+      getFavoriteProjects: sinon.stub().returns([]),
+      getFavoritePipelines: sinon.stub().returns([])
+    };
+
     // Create command handler
     commandHandler = new CommandHandler(
       mockAzureDevOpsService as any,
       mockAuthService as any,
+      mockConfigService as any,
       mockTreeDataProvider as any,
       mockContext
     );

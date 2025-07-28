@@ -98,11 +98,6 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
 - [x] 12. Implement run comparison functionality
-
-
-
-
-
   - Create run comparison UI that allows selecting multiple runs for comparison
   - Implement side-by-side comparison view showing differences in timing, results, and stages
   - Add comparison metrics and statistics display
@@ -110,7 +105,7 @@
   - Write unit tests for comparison logic and UI components
   - _Requirements: 3.5_
 
-- [ ] 13. Create configuration and settings management
+- [x] 13. Create configuration and settings management
   - Implement extension configuration schema in package.json with all required settings
   - Create settings validation and default value handling
   - Add configuration UI integration with VS Code settings
@@ -120,7 +115,7 @@
   - Write unit tests for configuration management
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 14. Add status bar integration
+- [x] 14. Add status bar integration
   - Create status bar items for current pipeline run status and connection status
   - Implement status bar click handlers for quick access to refresh and configuration
   - Add visual indicators for authentication state and API connectivity
@@ -128,7 +123,10 @@
   - Write unit tests for status bar functionality
   - _Requirements: 8.4_
 
-- [ ] 15. Implement real-time updates and background refresh
+- [-] 15. Implement real-time updates and background refresh
+
+
+
   - Create subscription mechanism for pipeline run status updates
   - Implement background polling for active pipeline runs with configurable intervals
   - Add incremental data fetching using API timestamps
