@@ -27,7 +27,10 @@ export function run(): Promise<void> {
     const coreTestFiles = [
       'treeDataProvider.test.js',
       'treeItems.test.js',
-      'extension.test.js'
+      'extension.test.js',
+      'authenticationService.test.js',
+      'cacheService.test.js',
+      'commands.test.js'
     ];
 
     try {
