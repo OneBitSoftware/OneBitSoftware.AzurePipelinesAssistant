@@ -1,8 +1,7 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
-import { RunComparisonService } from '../services/runComparisonService';
-import { PipelineRunDetails, Stage, Job, Task } from '../models';
+import { Job, PipelineRunDetails, Stage, Task } from '../models';
 import { ComparisonStatus, ExportFormat } from '../models/runComparison';
+import { RunComparisonService } from '../services/runComparisonService';
 
 suite('RunComparisonService Tests', () => {
   let comparisonService: RunComparisonService;
@@ -47,8 +46,15 @@ suite('RunComparisonService Tests', () => {
     });
 
     test('should handle runs with different results', () => {
-      const run1 = createMockRun(1, 'succeeded', new Date('2023-01-01T10:00:00Z'), new Date('2023-01-01T10:05:00Z'));
-      const run2 = createMockRun(2, 'failed', new Date('2023-01-01T11:00:00Z'), new Date('2023-01-01T11:05:00Z'));
+      const run1 = createMockRunWithStages(1, [
+        createMockStage('build', 'succeeded', 60000),
+        createMockStage('test', 'succeeded', 120000)
+      ]); // 100% success rate
+
+      const run2 = createMockRunWithStages(2, [
+        createMockStage('build', 'succeeded', 60000),
+        createMockStage('test', 'failed', 120000)
+      ]); // 50% success rate
 
       const comparison = comparisonService.compareRuns(run1, run2);
 
@@ -69,12 +75,12 @@ suite('RunComparisonService Tests', () => {
       const comparison = comparisonService.compareRuns(run1, run2);
 
       assert.strictEqual(comparison.stageComparisons.length, 2);
-      
+
       const buildComparison = comparison.stageComparisons.find(s => s.stageName === 'build');
       assert.ok(buildComparison);
       assert.strictEqual(buildComparison.status, ComparisonStatus.DIFFERENT);
       assert.ok(buildComparison.duration.percentageChange! < 0, 'Build should be faster');
-      
+
       const testComparison = comparison.stageComparisons.find(s => s.stageName === 'test');
       assert.ok(testComparison);
       assert.strictEqual(testComparison.status, ComparisonStatus.DIFFERENT);
@@ -95,15 +101,15 @@ suite('RunComparisonService Tests', () => {
       const comparison = comparisonService.compareRuns(run1, run2);
 
       assert.strictEqual(comparison.stageComparisons.length, 3);
-      
+
       const testComparison = comparison.stageComparisons.find(s => s.stageName === 'test');
       assert.ok(testComparison);
       assert.strictEqual(testComparison.status, ComparisonStatus.ONLY_FIRST);
-      
+
       const deployComparison = comparison.stageComparisons.find(s => s.stageName === 'deploy');
       assert.ok(deployComparison);
       assert.strictEqual(deployComparison.status, ComparisonStatus.ONLY_SECOND);
-      
+
       assert.ok(comparison.summary.removedItems.stages.includes('test'));
       assert.ok(comparison.summary.newItems.stages.includes('deploy'));
     });
@@ -336,7 +342,7 @@ suite('RunComparisonService Tests', () => {
   function createMockStage(name: string, result: string, durationMs: number): Stage {
     const startTime = new Date('2023-01-01T10:00:00Z');
     const finishTime = new Date(startTime.getTime() + durationMs);
-    
+
     return {
       id: name,
       name,
@@ -359,7 +365,7 @@ suite('RunComparisonService Tests', () => {
   function createMockJobWithTasks(name: string, result: string, tasks: Task[]): Job {
     const startTime = new Date('2023-01-01T10:00:00Z');
     const finishTime = new Date(startTime.getTime() + 30000);
-    
+
     return {
       id: name,
       name,
@@ -376,7 +382,7 @@ suite('RunComparisonService Tests', () => {
   function createMockTask(name: string, result: string, errorCount: number, warningCount: number): Task {
     const startTime = new Date('2023-01-01T10:00:00Z');
     const finishTime = new Date(startTime.getTime() + 10000);
-    
+
     return {
       id: name,
       name,

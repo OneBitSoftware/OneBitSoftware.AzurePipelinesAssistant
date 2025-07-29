@@ -4,8 +4,17 @@
   "description": "Manage Azure DevOps pipelines directly from VS Code",
   "version": "0.0.1",
   "publisher": "azure-pipelines-assistant",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azure-pipelines-assistant/azure-pipelines-assistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azure-pipelines-assistant/azure-pipelines-assistant/issues"
+  },
+  "homepage": "https://github.com/azure-pipelines-assistant/azure-pipelines-assistant#readme",
   "engines": {
-    "vscode": "^1.94.0"
+    "vscode": "^1.74.0"
   },
   "categories": [
     "Azure",
@@ -19,7 +28,10 @@
     "build"
   ],
   "activationEvents": [
-    "onView:azurePipelinesExplorer"
+    "onView:azurePipelinesExplorer",
+    "onCommand:azurePipelinesAssistant.configure",
+    "onCommand:azurePipelinesAssistant.runHealthCheck",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -42,12 +54,12 @@
     "commands": [
       {
         "command": "azurePipelinesAssistant.configure",
-        "title": "Configure Azure DevOps",
+        "title": "Configure Azure Pipelines Assistant",
         "icon": "$(gear)"
       },
       {
         "command": "azurePipelinesAssistant.refresh",
-        "title": "Refresh",
+        "title": "Refresh Azure Pipelines Assistant",
         "icon": "$(refresh)"
       },
       {
@@ -149,6 +161,41 @@
         "command": "azurePipelinesAssistant.showWelcome",
         "title": "Show Welcome",
         "icon": "$(home)"
+      },
+      {
+        "command": "azurePipelinesAssistant.runHealthCheck",
+        "title": "Run Health Check",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "azurePipelinesAssistant.showMemoryDiagnostics",
+        "title": "Show Memory Diagnostics",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "azurePipelinesAssistant.showExtensionDiagnostics",
+        "title": "Show Extension Diagnostics",
+        "icon": "$(info)"
+      },
+      {
+        "command": "azurePipelinesAssistant.clearCache",
+        "title": "Clear Cache",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "azurePipelinesAssistant.resetExtensionState",
+        "title": "Reset Extension State",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "azurePipelinesAssistant.exportDiagnostics",
+        "title": "Export Diagnostics",
+        "icon": "$(export)"
+      },
+      {
+        "command": "azurePipelinesAssistant.showActivationMetrics",
+        "title": "Show Activation Metrics",
+        "icon": "$(dashboard)"
       }
     ],
     "menus": {
@@ -278,6 +325,34 @@
         {
           "command": "azurePipelinesAssistant.showWelcome",
           "title": "Azure Pipelines: Show Welcome"
+        },
+        {
+          "command": "azurePipelinesAssistant.runHealthCheck",
+          "title": "Azure Pipelines: Run Health Check"
+        },
+        {
+          "command": "azurePipelinesAssistant.showMemoryDiagnostics",
+          "title": "Azure Pipelines: Show Memory Diagnostics"
+        },
+        {
+          "command": "azurePipelinesAssistant.showExtensionDiagnostics",
+          "title": "Azure Pipelines: Show Extension Diagnostics"
+        },
+        {
+          "command": "azurePipelinesAssistant.clearCache",
+          "title": "Azure Pipelines: Clear Cache"
+        },
+        {
+          "command": "azurePipelinesAssistant.resetExtensionState",
+          "title": "Azure Pipelines: Reset Extension State"
+        },
+        {
+          "command": "azurePipelinesAssistant.exportDiagnostics",
+          "title": "Azure Pipelines: Export Diagnostics"
+        },
+        {
+          "command": "azurePipelinesAssistant.showActivationMetrics",
+          "title": "Azure Pipelines: Show Activation Metrics"
         }
       ]
     },
@@ -349,7 +424,11 @@
                 "type": "string"
               }
             },
-            "required": ["projectId", "pipelineId", "name"]
+            "required": [
+              "projectId",
+              "pipelineId",
+              "name"
+            ]
           },
           "default": [],
           "description": "List of favorite pipelines for quick access",
@@ -365,7 +444,12 @@
         },
         "azurePipelinesAssistant.logLevel": {
           "type": "string",
-          "enum": ["error", "warn", "info", "debug"],
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug"
+          ],
           "default": "info",
           "description": "Logging level for extension diagnostics",
           "order": 10
@@ -386,33 +470,87 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "npm run build:production",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "package": "npm run build:production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "test": "node run-specific-tests.js",
-    "test:pipeline-trigger": "node run-pipeline-trigger-tests.js"
+    "test:pipeline-trigger": "node run-pipeline-trigger-tests.js",
+    "test:comprehensive": "npm run compile-tests && node out/test/comprehensive/index.js",
+    "test:unit": "npm run compile-tests && cross-env RUN_UNIT_TESTS=true RUN_INTEGRATION_TESTS=false RUN_E2E_TESTS=false RUN_PERFORMANCE_TESTS=false node out/test/comprehensive/index.js",
+    "test:integration": "npm run compile-tests && cross-env RUN_UNIT_TESTS=false RUN_INTEGRATION_TESTS=true RUN_E2E_TESTS=false RUN_PERFORMANCE_TESTS=false node out/test/comprehensive/index.js",
+    "test:e2e": "npm run compile-tests && cross-env RUN_UNIT_TESTS=false RUN_INTEGRATION_TESTS=false RUN_E2E_TESTS=true RUN_PERFORMANCE_TESTS=false node out/test/comprehensive/index.js",
+    "test:performance": "npm run compile-tests && cross-env RUN_UNIT_TESTS=false RUN_INTEGRATION_TESTS=false RUN_E2E_TESTS=false RUN_PERFORMANCE_TESTS=true node out/test/comprehensive/index.js",
+    "test:performance:extended": "npm run compile-tests && cross-env RUN_PERFORMANCE_TESTS=true PERFORMANCE_ITERATIONS=100 TEST_TIMEOUT=300000 node out/test/comprehensive/index.js",
+    "test:coverage": "npm run compile-tests && c8 --reporter=lcov --reporter=text --reporter=html node out/test/comprehensive/index.js",
+    "test:watch": "npm run compile-tests && npm-run-all -p watch-tests test:unit",
+    "test:debug": "npm run compile-tests && node --inspect-brk out/test/comprehensive/index.js",
+    "test:memory": "npm run compile-tests && cross-env NODE_OPTIONS='--max-old-space-size=4096' node out/test/performance/memoryUsage.test.js",
+    "test:stress": "npm run compile-tests && cross-env STRESS_TEST=true node out/test/comprehensive/index.js",
+    "build": "node scripts/build.js",
+    "build:development": "node scripts/build.js --development",
+    "build:production": "node scripts/build.js --production",
+    "build:watch": "node scripts/build.js --watch",
+    "build:analyze": "node esbuild.js --production --analyze",
+    "package:vscode": "@vscode/vsce package --out packages/",
+    "package:ovsx": "ovsx package -o packages/",
+    "package:all": "npm run package:cross-platform",
+    "package:cross-platform": "node scripts/package-cross-platform.js",
+    "publish:vscode": "vsce publish",
+    "publish:ovsx": "ovsx publish",
+    "publish:all": "npm run publish:vscode && npm run publish:ovsx",
+    "version:info": "node scripts/version-manager.js info",
+    "version:patch": "node scripts/version-manager.js bump --patch",
+    "version:minor": "node scripts/version-manager.js bump --minor",
+    "version:major": "node scripts/version-manager.js bump --major",
+    "version:prerelease": "node scripts/version-manager.js bump --prerelease",
+    "test:compatibility": "node scripts/test-compatibility.js",
+    "test:vscode": "npm run test",
+    "test:cursor": "echo 'Testing Cursor IDE compatibility...' && npm run test",
+    "test:windsurf": "echo 'Testing Windsurf IDE compatibility...' && npm run test",
+    "validate:cross-platform": "node scripts/validate-platforms.js",
+    "validate:windows": "echo 'Validating Windows compatibility...' && npm run package",
+    "validate:macos": "echo 'Validating macOS compatibility...' && npm run package",
+    "validate:linux": "echo 'Validating Linux compatibility...' && npm run package",
+    "ci:test": "npm run test:comprehensive",
+    "ci:test:unit": "npm run test:unit",
+    "ci:test:integration": "npm run test:integration",
+    "ci:test:e2e": "npm run test:e2e",
+    "ci:test:performance": "npm run test:performance",
+    "ci:coverage": "npm run test:coverage",
+    "ci:build": "node scripts/build.js --production --with-tests",
+    "ci:package": "npm run package:cross-platform",
+    "clean": "rimraf dist out packages coverage .nyc_output",
+    "clean:all": "npm run clean && rimraf node_modules"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/sinon": "^17.0.4",
-    "@types/vscode": "^1.102.0",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.2.1",
+    "c8": "^10.1.2",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
     "glob": "^11.0.3",
+    "madge": "^8.0.0",
+    "mocha": "^10.8.2",
     "npm-run-all": "^4.1.5",
+    "nyc": "^17.1.0",
+    "ovsx": "^0.9.10",
+    "rimraf": "^6.0.1",
     "sinon": "^21.0.0",
     "typescript": "^5.8.3"
   }

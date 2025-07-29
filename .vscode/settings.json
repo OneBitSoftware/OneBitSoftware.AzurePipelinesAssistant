@@ -1,0 +1,66 @@
+{
+    // TypeScript settings
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    
+    // Editor settings for extension development
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    
+    // File associations
+    "files.associations": {
+        "*.json": "jsonc"
+    },
+    
+    // Search settings - adjusted for workspace root
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/azure-pipelines-assistant/dist": true,
+        "**/azure-pipelines-assistant/out": true,
+        "**/azure-pipelines-assistant/.vscode-test": true,
+        "**/azure-pipelines-assistant/packages": true,
+        "**/*.vsix": true
+    },
+    
+    // File watcher settings - adjusted for workspace root
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/azure-pipelines-assistant/dist/**": true,
+        "**/azure-pipelines-assistant/out/**": true,
+        "**/azure-pipelines-assistant/.vscode-test/**": true,
+        "**/azure-pipelines-assistant/packages/**": true
+    },
+    
+    // Extension development specific
+    "extensions.ignoreRecommendations": false,
+    
+    // Debug settings
+    "debug.allowBreakpointsEverywhere": true,
+    "debug.inlineValues": "on",
+    "debug.showBreakpointsInOverviewRuler": true,
+    
+    // Terminal settings
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    
+    // Testing settings - adjusted for workspace root
+    "mochaExplorer.files": "azure-pipelines-assistant/out/test/**/*.test.js",
+    "mochaExplorer.env": {
+        "NODE_ENV": "test"
+    },
+    
+    // Recommended extensions for this workspace
+    "extensions.recommendations": [
+        "ms-vscode.vscode-typescript-next",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-mocha-test-adapter",
+        "ms-vscode.vscode-json"
+    ]
+}

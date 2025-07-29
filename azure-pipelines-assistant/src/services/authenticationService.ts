@@ -4,9 +4,11 @@ import {
   IAuthenticationService, 
   Credentials, 
   ValidationResult, 
-  Permission, 
-  AuthenticationError 
+  Permission
 } from '../interfaces/authenticationService';
+import { AuthenticationError } from '../errors/errorTypes';
+import { ErrorHandler } from '../errors/errorHandler';
+import { withRetry } from '../errors/errorRecovery';
 
 /**
  * Implementation of the authentication service for Azure DevOps
@@ -20,7 +22,10 @@ export class AuthenticationService implements IAuthenticationService {
   private _isAuthenticated = false;
   private _currentOrganization: string | null = null;
 
-  constructor(private readonly context: vscode.ExtensionContext) {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly errorHandler?: ErrorHandler
+  ) {
     this.initializeAuthenticationState();
   }
 
@@ -33,7 +38,19 @@ export class AuthenticationService implements IAuthenticationService {
       this._isAuthenticated = credentials !== null;
       this._currentOrganization = credentials?.organization || null;
     } catch (error) {
-      console.error('Failed to initialize authentication state:', error);
+      const authError = new AuthenticationError(
+        'Failed to initialize authentication state',
+        'NETWORK_ERROR',
+        'Unable to load stored credentials',
+        { operation: 'initializeAuthenticationState' }
+      );
+      
+      if (this.errorHandler) {
+        await this.errorHandler.handleErrorSilently(authError);
+      } else {
+        console.error('Failed to initialize authentication state:', error);
+      }
+      
       this._isAuthenticated = false;
       this._currentOrganization = null;
     }
@@ -170,51 +187,56 @@ export class AuthenticationService implements IAuthenticationService {
   }
 
   /**
-   * Makes an HTTP request to Azure DevOps API
+   * Makes an HTTP request to Azure DevOps API with retry logic
    */
   private makeHttpRequest(url: string, pat: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const auth = Buffer.from(`:${pat}`).toString('base64');
-      const urlObj = new URL(url);
-      
-      const options = {
-        hostname: urlObj.hostname,
-        port: urlObj.port || 443,
-        path: urlObj.pathname + urlObj.search,
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Accept': 'application/json',
-          'User-Agent': 'Azure-Pipelines-Assistant-VSCode'
-        }
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
+    return withRetry(async () => {
+      return new Promise<string>((resolve, reject) => {
+        const auth = Buffer.from(`:${pat}`).toString('base64');
+        const urlObj = new URL(url);
         
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        res.on('end', () => {
-          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(data);
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+        const options = {
+          hostname: urlObj.hostname,
+          port: urlObj.port || 443,
+          path: urlObj.pathname + urlObj.search,
+          method: 'GET',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Accept': 'application/json',
+            'User-Agent': 'Azure-Pipelines-Assistant-VSCode'
           }
+        };
+
+        const req = https.request(options, (res) => {
+          let data = '';
+          
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+            }
+          });
         });
-      });
 
-      req.on('error', (error) => {
-        reject(error);
-      });
+        req.on('error', (error) => {
+          reject(error);
+        });
 
-      req.setTimeout(10000, () => {
-        req.destroy();
-        reject(new Error('Request timeout'));
-      });
+        req.setTimeout(10000, () => {
+          req.destroy();
+          reject(new Error('Request timeout'));
+        });
 
-      req.end();
+        req.end();
+      });
+    }, 'authenticationRequest', {
+      maxRetries: 2,
+      baseDelay: 1000
     });
   }
 

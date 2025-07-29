@@ -1,14 +1,82 @@
+# VS Code specific files
 .vscode/**
 .vscode-test/**
+.vscode-test.mjs
+
+# Build and development files
 out/**
 node_modules/**
 src/**
+scripts/**
+.github/**
+
+# Configuration files
 .gitignore
 .yarnrc
 esbuild.js
+build-config.js
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/eslint.config.mjs
+eslint.config.mjs
+
+# Source maps and TypeScript files
 **/*.map
 **/*.ts
+!dist/**/*.js
+
+# Test files
 **/.vscode-test.*
+**/test/**
+**/*.test.js
+**/*.test.ts
+**/mocha.opts
+coverage/**
+.nyc_output/**
+test-results.xml
+*.log
+
+# Documentation and development files
+TESTING-*.md
+CROSS-IDE-IMPLEMENTATION.md
+IDE-COMPATIBILITY.md
+run-*.js
+
+# Package management
+package-lock.json
+yarn.lock
+.npmrc
+
+# Temporary and cache files
+.cache/**
+temp/**
+tmp/**
+*.tmp
+*.temp
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE specific files
+.idea/**
+*.sublime-*
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+
+# Build artifacts (keep only dist)
+packages/**
+!packages/*.vsix
+
+# Performance and analysis files
+bundle-analysis.txt
+performance-*.json
+memory-usage.log
+
+# Git files
+.git/**
+.gitattributes

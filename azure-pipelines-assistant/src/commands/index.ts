@@ -60,8 +60,7 @@ export class CommandHandler {
 
     // Basic commands
     disposables.push(
-      vscode.commands.registerCommand('azurePipelinesAssistant.refresh', () => this.refresh()),
-      vscode.commands.registerCommand('azurePipelinesAssistant.configure', () => this.configure())
+      vscode.commands.registerCommand('azurePipelinesAssistant.refresh', () => this.refresh())
     );
 
     // Pipeline commands
@@ -107,10 +106,7 @@ export class CommandHandler {
     vscode.window.showInformationMessage('Azure Pipelines refreshed');
   }
 
-  private async configure(): Promise<void> {
-    // Use the configuration wizard instead of just opening settings
-    await vscode.commands.executeCommand('azurePipelinesAssistant.configure');
-  }
+
 
   // Pipeline Commands
 

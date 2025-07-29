@@ -1,0 +1,235 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${file}",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "name": "Run Azure Pipelines Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/dist/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: compile",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeExecutable": "${execPath}",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Run Azure Pipelines Extension (Watch Mode)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/dist/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: watch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Azure Pipelines Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant",
+        "--extensionTestsPath=${workspaceFolder}/azure-pipelines-assistant/out/test/suite/index"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/out/test/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: pretest",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Azure Pipelines Cross-IDE Compatibility Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/azure-pipelines-assistant/scripts/test-compatibility.js",
+      "cwd": "${workspaceFolder}/azure-pipelines-assistant",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "azure-pipelines-assistant: compile"
+    },
+    {
+      "name": "Azure Pipelines Platform Validation Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/azure-pipelines-assistant/scripts/validate-platforms.js",
+      "cwd": "${workspaceFolder}/azure-pipelines-assistant",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Package Azure Pipelines Extension",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/azure-pipelines-assistant/scripts/package-cross-platform.js",
+      "cwd": "${workspaceFolder}/azure-pipelines-assistant",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "azure-pipelines-assistant: package"
+    },
+    {
+      "name": "Debug Azure Pipelines Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant",
+        "--disable-extensions"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/dist/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: compile",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG": "azure-pipelines-assistant:*"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "stopOnEntry": false,
+      "smartStep": true,
+      "showAsyncStacks": true
+    },
+    {
+      "name": "Debug Azure Pipelines Extension Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/azure-pipelines-assistant/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--timeout",
+        "999999",
+        "--colors",
+        "${workspaceFolder}/azure-pipelines-assistant/out/test/**/*.test.js"
+      ],
+      "cwd": "${workspaceFolder}/azure-pipelines-assistant",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "azure-pipelines-assistant: compile-tests",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Debug Azure Pipelines Authentication",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/dist/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: compile",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG_AUTH": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Debug Azure Pipelines Tree Provider",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/azure-pipelines-assistant"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/azure-pipelines-assistant/dist/**/*.js"
+      ],
+      "preLaunchTask": "azure-pipelines-assistant: compile",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "DEBUG_TREE": "true"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Azure Pipelines: Extension + Watch",
+      "configurations": [
+        "Run Azure Pipelines Extension (Watch Mode)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Azure Pipelines: Full Test Suite",
+      "configurations": [
+        "Azure Pipelines Extension Tests",
+        "Azure Pipelines Cross-IDE Compatibility Tests",
+        "Azure Pipelines Platform Validation Tests"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Azure Pipelines: Debug Extension + Tests",
+      "configurations": [
+        "Debug Azure Pipelines Extension",
+        "Debug Azure Pipelines Extension Tests"
+      ],
+      "stopAll": true
+    }
+  ]
+}

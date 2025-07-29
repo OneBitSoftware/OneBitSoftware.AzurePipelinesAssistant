@@ -1,0 +1,279 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "compile",
+            "path": "azure-pipelines-assistant/",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "label": "azure-pipelines-assistant: compile",
+            "detail": "npm run compile (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "watch",
+            "path": "azure-pipelines-assistant/",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "label": "azure-pipelines-assistant: watch",
+            "detail": "npm run watch (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "package",
+            "path": "azure-pipelines-assistant/",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "label": "azure-pipelines-assistant: package",
+            "detail": "npm run package (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "pretest",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "label": "azure-pipelines-assistant: pretest",
+            "detail": "npm run pretest (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "compile-tests",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "label": "azure-pipelines-assistant: compile-tests",
+            "detail": "npm run compile-tests (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "test",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "label": "azure-pipelines-assistant: test",
+            "detail": "npm test (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "test:compatibility",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "label": "azure-pipelines-assistant: test:compatibility",
+            "detail": "npm run test:compatibility (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "validate:cross-platform",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "label": "azure-pipelines-assistant: validate:cross-platform",
+            "detail": "npm run validate:cross-platform (azure-pipelines-assistant)"
+        },
+        {
+            "type": "npm",
+            "script": "package:cross-platform",
+            "path": "azure-pipelines-assistant/",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "label": "azure-pipelines-assistant: package:cross-platform",
+            "detail": "npm run package:cross-platform (azure-pipelines-assistant)"
+        },
+        {
+            "label": "Azure Pipelines: Clean Build",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "clean"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/azure-pipelines-assistant"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Azure Pipelines: Install Dependencies",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "install"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/azure-pipelines-assistant"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Azure Pipelines: Lint Code",
+            "type": "npm",
+            "script": "lint",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$eslint-stylish"
+            ]
+        },
+        {
+            "label": "Azure Pipelines: Type Check",
+            "type": "npm",
+            "script": "check-types",
+            "path": "azure-pipelines-assistant/",
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "Azure Pipelines: Build and Package",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "azure-pipelines-assistant: compile",
+                "azure-pipelines-assistant: package"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Azure Pipelines: Full Test and Build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Azure Pipelines: Type Check",
+                "Azure Pipelines: Lint Code",
+                "azure-pipelines-assistant: test",
+                "azure-pipelines-assistant: test:compatibility",
+                "Azure Pipelines: Build and Package"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        }
+    ]
+}

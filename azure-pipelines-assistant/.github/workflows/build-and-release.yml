@@ -1,0 +1,528 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18.x'
+  VSCODE_VERSION: '1.74.0'
+
+jobs:
+  # Build and validate
+  build:
+    name: Build Extension
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['18.x', '20.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for version management
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run build script
+      run: node scripts/build.js --production --with-tests
+      env:
+        NODE_ENV: production
+
+    - name: Validate build output
+      run: |
+        if [ ! -f "dist/extension.js" ]; then
+          echo "❌ Extension bundle not found"
+          exit 1
+        fi
+        echo "✅ Extension bundle created successfully"
+        ls -la dist/
+
+    - name: Run platform validation
+      run: node scripts/validate-platforms.js
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.os }}-${{ matrix.node-version }}
+        path: |
+          dist/
+          out/
+        retention-days: 7
+
+  # Package extension for different marketplaces
+  package:
+    name: Package Extension
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install packaging tools
+      run: |
+        npm install -g @vscode/vsce ovsx
+
+    - name: Build extension
+      run: node scripts/build.js --production
+
+    - name: Run cross-platform packaging
+      run: node scripts/package-cross-platform.js
+
+    - name: Validate packages
+      run: |
+        echo "📦 Validating created packages..."
+        ls -la packages/
+        
+        # Check if packages were created
+        if [ ! -f packages/*.vsix ]; then
+          echo "❌ No VSIX packages found"
+          exit 1
+        fi
+        
+        # Validate package integrity
+        for package in packages/*.vsix; do
+          echo "Validating $package..."
+          if [ ! -s "$package" ]; then
+            echo "❌ Package $package is empty"
+            exit 1
+          fi
+          echo "✅ Package $package is valid"
+        done
+
+    - name: Upload packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: extension-packages
+        path: packages/
+        retention-days: 30
+
+    - name: Generate package manifest
+      run: |
+        echo "# Package Manifest" > packages/MANIFEST.md
+        echo "" >> packages/MANIFEST.md
+        echo "Generated on: $(date)" >> packages/MANIFEST.md
+        echo "Commit: ${{ github.sha }}" >> packages/MANIFEST.md
+        echo "Branch: ${{ github.ref_name }}" >> packages/MANIFEST.md
+        echo "" >> packages/MANIFEST.md
+        echo "## Packages" >> packages/MANIFEST.md
+        for package in packages/*.vsix; do
+          size=$(du -h "$package" | cut -f1)
+          echo "- $(basename "$package") ($size)" >> packages/MANIFEST.md
+        done
+
+  # Run comprehensive tests
+  test:
+    name: Comprehensive Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.skip_tests != 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-ubuntu-latest-${{ env.NODE_VERSION }}
+        path: .
+
+    - name: Run comprehensive test suite
+      run: npm run test:comprehensive
+      env:
+        RUN_UNIT_TESTS: true
+        RUN_INTEGRATION_TESTS: true
+        RUN_E2E_TESTS: true
+        RUN_PERFORMANCE_TESTS: true
+        TEST_TIMEOUT: 30000
+
+    - name: Run cross-IDE compatibility tests
+      run: node scripts/test-compatibility.js
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          test-results.xml
+          coverage/
+        retention-days: 30
+
+  # Version management and release preparation
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    needs: [build, package, test]
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Configure git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Determine version bump
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+        else
+          # Auto-determine release type based on commit messages
+          COMMITS=$(git log --pretty=format:"%s" $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --pretty=format:"%s")
+          
+          if echo "$COMMITS" | grep -q "BREAKING\|breaking"; then
+            RELEASE_TYPE="major"
+          elif echo "$COMMITS" | grep -q "feat\|feature"; then
+            RELEASE_TYPE="minor"
+          else
+            RELEASE_TYPE="patch"
+          fi
+        fi
+        
+        echo "Release type: $RELEASE_TYPE"
+        
+        # Bump version
+        NEW_VERSION=$(node scripts/version-manager.js bump --$RELEASE_TYPE --dry-run | grep "Would update version to:" | cut -d: -f2 | xargs)
+        
+        if [ -z "$NEW_VERSION" ]; then
+          echo "❌ Failed to determine new version"
+          exit 1
+        fi
+        
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "should_release=true" >> $GITHUB_OUTPUT
+        echo "New version will be: $NEW_VERSION"
+
+    - name: Bump version and update changelog
+      if: steps.version.outputs.should_release == 'true'
+      run: |
+        RELEASE_TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+        node scripts/version-manager.js bump --$RELEASE_TYPE
+
+    - name: Push version changes
+      if: steps.version.outputs.should_release == 'true'
+      run: |
+        git push origin main
+        git push origin --tags
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare-release]
+    if: needs.prepare-release.outputs.should_release == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download extension packages
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-packages
+        path: packages/
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        # Extract changelog entry for the new version
+        VERSION="${{ needs.prepare-release.outputs.new_version }}"
+        
+        if [ -f "CHANGELOG.md" ]; then
+          # Extract the latest changelog entry
+          RELEASE_NOTES=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+          
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="Release version $VERSION"
+          fi
+        else
+          RELEASE_NOTES="Release version $VERSION"
+        fi
+        
+        echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+        echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ needs.prepare-release.outputs.new_version }}
+        release_name: Release v${{ needs.prepare-release.outputs.new_version }}
+        body: ${{ steps.release_notes.outputs.release_notes }}
+        draft: false
+        prerelease: ${{ contains(needs.prepare-release.outputs.new_version, '-') }}
+
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: packages/
+        asset_name: extension-packages
+        asset_content_type: application/zip
+
+  # Publish to marketplaces
+  publish:
+    name: Publish to Marketplaces
+    runs-on: ubuntu-latest
+    needs: [create-release, prepare-release]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install publishing tools
+      run: |
+        npm install -g @vscode/vsce ovsx
+
+    - name: Download extension packages
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-packages
+        path: packages/
+
+    - name: Publish to VS Code Marketplace
+      if: env.VSCE_PAT != ''
+      run: |
+        PACKAGE=$(ls packages/*vscode*.vsix | head -1)
+        if [ -f "$PACKAGE" ]; then
+          vsce publish --packagePath "$PACKAGE"
+          echo "✅ Published to VS Code Marketplace"
+        else
+          echo "❌ VS Code package not found"
+          exit 1
+        fi
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+    - name: Publish to Open VSX Registry
+      if: env.OVSX_PAT != ''
+      run: |
+        PACKAGE=$(ls packages/*ovsx*.vsix | head -1)
+        if [ -f "$PACKAGE" ]; then
+          ovsx publish "$PACKAGE"
+          echo "✅ Published to Open VSX Registry"
+        else
+          echo "❌ Open VSX package not found"
+          exit 1
+        fi
+      env:
+        OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+    - name: Create deployment summary
+      run: |
+        echo "# Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Version: v${{ needs.prepare-release.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Published to:" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ env.VSCE_PAT }}" != "" ]; then
+          echo "- ✅ VS Code Marketplace" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⏭️ VS Code Marketplace (skipped - no token)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ env.OVSX_PAT }}" != "" ]; then
+          echo "- ✅ Open VSX Registry" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⏭️ Open VSX Registry (skipped - no token)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## IDE Compatibility:" >> $GITHUB_STEP_SUMMARY
+        echo "- VS Code: Available on VS Code Marketplace" >> $GITHUB_STEP_SUMMARY
+        echo "- Cursor: Available on Open VSX Registry" >> $GITHUB_STEP_SUMMARY
+        echo "- Windsurf: Available on Open VSX Registry" >> $GITHUB_STEP_SUMMARY
+
+  # Post-release tasks
+  post-release:
+    name: Post-Release Tasks
+    runs-on: ubuntu-latest
+    needs: [publish, prepare-release]
+    if: always() && needs.prepare-release.outputs.should_release == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Update development branch
+      run: |
+        git checkout develop || git checkout -b develop
+        git merge main
+        git push origin develop
+
+    - name: Create post-release issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const version = '${{ needs.prepare-release.outputs.new_version }}';
+          const publishSuccess = '${{ needs.publish.result }}' === 'success';
+          
+          const body = `
+          ## Release v${version} Summary
+          
+          **Status:** ${publishSuccess ? '✅ Success' : '❌ Failed'}
+          **Release Date:** ${new Date().toISOString().split('T')[0]}
+          **Commit:** ${context.sha}
+          
+          ### Published to:
+          - VS Code Marketplace: ${publishSuccess ? '✅' : '❌'}
+          - Open VSX Registry: ${publishSuccess ? '✅' : '❌'}
+          
+          ### Next Steps:
+          - [ ] Monitor marketplace for any issues
+          - [ ] Update documentation if needed
+          - [ ] Announce release on social media
+          - [ ] Plan next release cycle
+          
+          ### Links:
+          - [GitHub Release](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/v${version})
+          - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=azure-pipelines-assistant.azure-pipelines-assistant)
+          - [Open VSX Registry](https://open-vsx.org/extension/azure-pipelines-assistant/azure-pipelines-assistant)
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Post-Release Tasks for v${version}`,
+            body: body,
+            labels: ['release', 'post-release', 'automated']
+          });
+
+    - name: Send notification
+      if: env.SLACK_WEBHOOK_URL != ''
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"🚀 Azure Pipelines Assistant v${{ needs.prepare-release.outputs.new_version }} has been released!\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Cleanup
+  cleanup:
+    name: Cleanup Artifacts
+    runs-on: ubuntu-latest
+    needs: [post-release]
+    if: always()
+    
+    steps:
+    - name: Delete temporary artifacts
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+          });
+          
+          // Keep only essential artifacts
+          const keepArtifacts = ['extension-packages', 'test-results', 'coverage-results'];
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (!keepArtifacts.includes(artifact.name)) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+              console.log(`Deleted artifact: ${artifact.name}`);
+            }
+          }

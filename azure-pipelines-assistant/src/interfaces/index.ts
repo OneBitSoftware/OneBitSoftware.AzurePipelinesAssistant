@@ -5,3 +5,4 @@ export * from './authenticationService';
 export * from './apiClient';
 export * from './cacheService';
 export * from './azureDevOpsService';
+export * from './realTimeUpdateService';

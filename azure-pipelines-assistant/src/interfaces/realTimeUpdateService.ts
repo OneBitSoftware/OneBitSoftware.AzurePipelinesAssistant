@@ -94,6 +94,11 @@ export interface IRealTimeUpdateService {
      * Clear all subscriptions and stop background refresh
      */
     dispose(): void;
+
+    /**
+     * Event emitted when run status changes
+     */
+    readonly onRunStatusChanged: vscode.Event<RunStatusChangeEvent>;
 }
 
 /**

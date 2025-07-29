@@ -102,6 +102,36 @@ export interface ICacheService {
      * @param projectId Project ID
      */
     invalidatePipeline(pipelineId: number, projectId: string): void;
+
+    /**
+     * Get the last update timestamp for cached pipeline runs
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID
+     * @returns Last update timestamp or null if not cached
+     */
+    getLastUpdateTimestamp(pipelineId: number, projectId: string): Date | null;
+
+    /**
+     * Set the last update timestamp for cached pipeline runs
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID
+     * @param timestamp Update timestamp
+     */
+    setLastUpdateTimestamp(pipelineId: number, projectId: string, timestamp: Date): void;
+
+    /**
+     * Check if cache entry is expired
+     * @param key Cache key
+     * @returns True if expired or not found
+     */
+    isExpired(key: string): boolean;
+
+    /**
+     * Get cache entry with metadata
+     * @param key Cache key
+     * @returns Cache entry with expiry information or null
+     */
+    getCacheEntry<T>(key: string): CacheEntry<T> | null;
 }
 
 /**

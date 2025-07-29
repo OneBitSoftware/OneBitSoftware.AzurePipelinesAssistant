@@ -8,3 +8,4 @@ export * from './authenticationService';
 export * from './apiClient';
 export * from './cacheService';
 export * from './statusBarService';
+export * from './realTimeUpdateService';

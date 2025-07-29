@@ -27,7 +27,11 @@ suite('Pipeline Trigger Integration Tests', () => {
             getLogs: sinon.stub(),
             refreshProject: sinon.stub(),
             refreshPipeline: sinon.stub(),
-            clearCache: sinon.stub()
+            clearCache: sinon.stub(),
+            getPipelineRunsIncremental: sinon.stub(),
+            getRunDetailsWithChangeDetection: sinon.stub(),
+            getActiveRuns: sinon.stub(),
+            getActivePipelineRuns: sinon.stub()
         };
 
         // Create mock extension context

@@ -191,6 +191,51 @@ export class CacheService implements ICacheService {
     }
 
     /**
+     * Get the last update timestamp for cached pipeline runs
+     */
+    getLastUpdateTimestamp(pipelineId: number, projectId: string): Date | null {
+        const timestamp = this.get<Date>(`timestamp:${projectId}:${pipelineId}`);
+        return timestamp;
+    }
+
+    /**
+     * Set the last update timestamp for cached pipeline runs
+     */
+    setLastUpdateTimestamp(pipelineId: number, projectId: string, timestamp: Date): void {
+        this.set(`timestamp:${projectId}:${pipelineId}`, timestamp);
+    }
+
+    /**
+     * Check if cache entry is expired
+     */
+    isExpired(key: string): boolean {
+        const node = this.cache.get(key);
+        if (!node) {
+            return true;
+        }
+        return Date.now() > node.value.expiry;
+    }
+
+    /**
+     * Get cache entry with metadata
+     */
+    getCacheEntry<T>(key: string): CacheEntry<T> | null {
+        const node = this.cache.get(key);
+        if (!node) {
+            return null;
+        }
+
+        // Check if expired
+        if (Date.now() > node.value.expiry) {
+            this.removeNode(node);
+            this.cache.delete(key);
+            return null;
+        }
+
+        return node.value as CacheEntry<T>;
+    }
+
+    /**
      * Cleanup expired entries
      */
     cleanup(): void {
@@ -210,6 +255,13 @@ export class CacheService implements ICacheService {
                 this.cache.delete(key);
             }
         });
+    }
+
+    /**
+     * Dispose of the cache service
+     */
+    dispose(): void {
+        this.clear();
     }
 
     // Private LRU implementation methods

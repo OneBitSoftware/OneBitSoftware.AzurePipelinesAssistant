@@ -120,6 +120,43 @@ export interface IAzureDevOpsService {
      * @returns Promise resolving when cache is cleared
      */
     clearCache(): Promise<void>;
+
+    // Real-time Updates and Incremental Fetching
+
+    /**
+     * Get pipeline runs with incremental fetching support
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID or name
+     * @param since Optional timestamp to fetch only runs modified since this time
+     * @param top Maximum number of runs to return (optional)
+     * @returns Promise resolving to array of pipeline runs
+     */
+    getPipelineRunsIncremental(pipelineId: number, projectId: string, since?: Date, top?: number): Promise<PipelineRun[]>;
+
+    /**
+     * Get run details with change detection
+     * @param runId Run ID
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID or name
+     * @param lastModified Optional timestamp for change detection
+     * @returns Promise resolving to detailed run information with change indicator
+     */
+    getRunDetailsWithChangeDetection(runId: number, pipelineId: number, projectId: string, lastModified?: Date): Promise<{ run: PipelineRunDetails; hasChanged: boolean }>;
+
+    /**
+     * Get active (in-progress) pipeline runs across all pipelines in a project
+     * @param projectId Project ID or name
+     * @returns Promise resolving to array of active pipeline runs
+     */
+    getActiveRuns(projectId: string): Promise<PipelineRun[]>;
+
+    /**
+     * Get active (in-progress) pipeline runs for a specific pipeline
+     * @param pipelineId Pipeline ID
+     * @param projectId Project ID or name
+     * @returns Promise resolving to array of active pipeline runs
+     */
+    getActivePipelineRuns(pipelineId: number, projectId: string): Promise<PipelineRun[]>;
 }
 
 

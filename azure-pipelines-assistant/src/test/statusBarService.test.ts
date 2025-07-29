@@ -16,35 +16,102 @@ suite('StatusBarService', () => {
     let createStatusBarItemStub: sinon.SinonStub;
 
     setup(() => {
-        // Create mock services
-        mockAuthService = sinon.createStubInstance<IAuthenticationService>({} as any);
-        mockAzureDevOpsService = sinon.createStubInstance<IAzureDevOpsService>({} as any);
-        mockContext = sinon.createStubInstance<vscode.ExtensionContext>({} as any);
+        try {
+            // Create mock services using regular stubs (interfaces are not constructors)
+            mockAuthService = {
+                isAuthenticated: sinon.stub().returns(false),
+                onAuthenticationChanged: sinon.stub(),
+                authenticate: sinon.stub(),
+                getCredentials: sinon.stub(),
+                clearCredentials: sinon.stub(),
+                getCurrentOrganization: sinon.stub()
+            } as any;
+            
+            mockAzureDevOpsService = {
+                getProjects: sinon.stub(),
+                getPipelines: sinon.stub(),
+                getPipelineRuns: sinon.stub(),
+                getRunDetails: sinon.stub(),
+                triggerRun: sinon.stub(),
+                cancelRun: sinon.stub(),
+                getLogs: sinon.stub(),
+                downloadArtifacts: sinon.stub()
+            } as any;
+            
+            mockContext = {
+                subscriptions: [],
+                workspaceState: {
+                    get: sinon.stub(),
+                    update: sinon.stub()
+                },
+                globalState: {
+                    get: sinon.stub(),
+                    update: sinon.stub()
+                },
+                secrets: {
+                    get: sinon.stub(),
+                    store: sinon.stub(),
+                    delete: sinon.stub()
+                }
+            } as any;
 
-        // Create mock status bar items
-        mockConnectionStatusItem = sinon.createStubInstance<vscode.StatusBarItem>({} as any);
-        mockPipelineStatusItem = sinon.createStubInstance<vscode.StatusBarItem>({} as any);
+            // Create mock status bar items
+            mockConnectionStatusItem = {
+                text: '',
+                tooltip: '',
+                command: '',
+                backgroundColor: undefined,
+                color: undefined,
+                show: sinon.stub(),
+                hide: sinon.stub(),
+                dispose: sinon.stub()
+            } as any;
+            
+            mockPipelineStatusItem = {
+                text: '',
+                tooltip: '',
+                command: '',
+                backgroundColor: undefined,
+                color: undefined,
+                show: sinon.stub(),
+                hide: sinon.stub(),
+                dispose: sinon.stub()
+            } as any;
 
-        // Mock vscode.window.createStatusBarItem
-        createStatusBarItemStub = sinon.stub(vscode.window, 'createStatusBarItem');
-        createStatusBarItemStub.onFirstCall().returns(mockConnectionStatusItem as any);
-        createStatusBarItemStub.onSecondCall().returns(mockPipelineStatusItem as any);
+            // Mock vscode.window.createStatusBarItem
+            createStatusBarItemStub = sinon.stub(vscode.window, 'createStatusBarItem');
+            createStatusBarItemStub.onFirstCall().returns(mockConnectionStatusItem as any);
+            createStatusBarItemStub.onSecondCall().returns(mockPipelineStatusItem as any);
 
-        // Mock authentication service event emitter
-        const mockEventEmitter = sinon.createStubInstance(vscode.EventEmitter);
-        (mockAuthService as any).onAuthenticationChanged = mockEventEmitter.event;
+            // Mock authentication service event emitter
+            const mockEventEmitter = new vscode.EventEmitter<boolean>();
+            (mockAuthService as any).onAuthenticationChanged = mockEventEmitter.event;
 
-        // Create status bar service
-        statusBarService = new StatusBarService(
-            mockAuthService as any,
-            mockAzureDevOpsService as any,
-            mockContext as any
-        );
+            // Create status bar service
+            statusBarService = new StatusBarService(
+                mockAuthService as any,
+                mockAzureDevOpsService as any,
+                mockContext as any
+            );
+        } catch (error) {
+            console.error('Error in status bar service test setup:', error);
+            throw error;
+        }
     });
 
     teardown(() => {
-        sinon.restore();
-        statusBarService.dispose();
+        try {
+            // Only restore the specific stub we created
+            if (createStatusBarItemStub) {
+                createStatusBarItemStub.restore();
+            }
+            if (statusBarService) {
+                statusBarService.dispose();
+            }
+        } catch (error) {
+            console.error('Error in status bar service test teardown:', error);
+            // Don't re-throw to avoid masking the actual test failure
+        }
     });
 
     suite('initialization', () => {

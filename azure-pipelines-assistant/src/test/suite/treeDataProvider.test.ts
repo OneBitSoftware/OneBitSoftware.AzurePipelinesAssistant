@@ -1,27 +1,20 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import { 
-  AzurePipelinesTreeDataProvider, 
-  WelcomeTreeItem 
+import * as vscode from 'vscode';
+import { AuthenticationError, IAuthenticationService, IAzureDevOpsService, IRealTimeUpdateService } from '../../interfaces';
+import { Job, Pipeline, PipelineRun, Project, Stage, Task } from '../../models';
+import { IConfigurationService } from '../../services/configurationService';
+import {
+  AzurePipelinesTreeDataProvider,
+  WelcomeTreeItem
 } from '../../services/treeDataProvider';
-import { 
-  ProjectTreeItem,
-  PipelineTreeItem,
-  PipelineRunTreeItem,
-  StageTreeItem,
-  JobTreeItem,
-  TaskTreeItem,
-  ErrorTreeItem
-} from '../../models/treeItems';
-import { Project, Pipeline, PipelineRun, Stage, Job, Task } from '../../models';
-import { IAzureDevOpsService, IAuthenticationService, AuthenticationError } from '../../interfaces';
 
 suite('Tree Data Provider Test Suite', () => {
   let mockAzureDevOpsService: sinon.SinonStubbedInstance<IAzureDevOpsService>;
   let mockAuthService: sinon.SinonStubbedInstance<IAuthenticationService>;
+  let mockRealTimeService: sinon.SinonStubbedInstance<IRealTimeUpdateService>;
+  let mockConfigService: sinon.SinonStubbedInstance<IConfigurationService>;
   let mockContext: vscode.ExtensionContext;
-  let treeProvider: AzurePipelinesTreeDataProvider;
   let authChangeEmitter: vscode.EventEmitter<boolean>;
 
   // Mock data
@@ -118,76 +111,122 @@ suite('Tree Data Provider Test Suite', () => {
     order: 1
   };
 
-  const mockRunDetails = {
-    ...mockPipelineRun,
-    stages: [mockStage],
-    timeline: [],
-    logs: []
-  };
+
 
   setup(() => {
-    // Create mock services with proper interfaces
-    mockAzureDevOpsService = {
-      getProjects: sinon.stub(),
-      getPipelines: sinon.stub(),
-      getPipelineRuns: sinon.stub(),
-      getRunDetails: sinon.stub(),
-      triggerRun: sinon.stub(),
-      cancelRun: sinon.stub(),
-      getLogs: sinon.stub(),
-      downloadArtifacts: sinon.stub()
-    } as any;
-    
-    mockAuthService = {
-      isAuthenticated: sinon.stub().returns(false), // Default to false
-      onAuthenticationChanged: sinon.stub(),
-      authenticate: sinon.stub(),
-      getCredentials: sinon.stub(),
-      clearCredentials: sinon.stub()
-    } as any;
-    
-    // Create auth change emitter
-    authChangeEmitter = new vscode.EventEmitter<boolean>();
-    (mockAuthService.onAuthenticationChanged as any) = authChangeEmitter.event;
-    
-    // Create mock context
-    mockContext = {
-      subscriptions: [],
-      workspaceState: {
+    try {
+      // Create mock services with proper interfaces
+      mockAzureDevOpsService = {
+        getProjects: sinon.stub(),
+        getPipelines: sinon.stub(),
+        getPipelineRuns: sinon.stub(),
+        getPipelineRunsIncremental: sinon.stub(),
+        getRunDetails: sinon.stub(),
+        getRunDetailsWithChangeDetection: sinon.stub(),
+        getActiveRuns: sinon.stub(),
+        getActivePipelineRuns: sinon.stub(),
+        triggerRun: sinon.stub(),
+        cancelRun: sinon.stub(),
+        getRunLogs: sinon.stub(),
+        downloadArtifacts: sinon.stub(),
+        searchPipelines: sinon.stub(),
+        comparePipelineRuns: sinon.stub(),
+        clearCache: sinon.stub()
+      } as any;
+
+      mockAuthService = {
+        isAuthenticated: sinon.stub().returns(false), // Default to false
+        onAuthenticationChanged: sinon.stub(),
+        validateCredentials: sinon.stub(),
+        getStoredCredentials: sinon.stub(),
+        storeCredentials: sinon.stub(),
+        clearCredentials: sinon.stub(),
+        getCurrentOrganization: sinon.stub(),
+        dispose: sinon.stub()
+      } as any;
+
+      // Create auth change emitter
+      authChangeEmitter = new vscode.EventEmitter<boolean>();
+      (mockAuthService.onAuthenticationChanged as any) = authChangeEmitter.event;
+
+      // Create mock real-time service
+      mockRealTimeService = {
+        subscribeToRunUpdates: sinon.stub(),
+        subscribeToPipelineUpdates: sinon.stub(),
+        startBackgroundRefresh: sinon.stub(),
+        stopBackgroundRefresh: sinon.stub(),
+        isBackgroundRefreshActive: sinon.stub().returns(false),
+        getActiveSubscriptionCount: sinon.stub().returns(0),
+        getConfiguration: sinon.stub(),
+        updateConfiguration: sinon.stub(),
+        refreshAllSubscriptions: sinon.stub(),
+        dispose: sinon.stub(),
+        onRunStatusChanged: new vscode.EventEmitter<any>().event
+      } as any;
+
+      // Create mock configuration service
+      mockConfigService = {
         get: sinon.stub(),
-        update: sinon.stub()
-      },
-      globalState: {
-        get: sinon.stub(),
-        update: sinon.stub()
-      },
-      secrets: {
-        get: sinon.stub(),
-        store: sinon.stub(),
-        delete: sinon.stub()
-      }
-    } as any;
+        update: sinon.stub(),
+        getRefreshInterval: sinon.stub().returns(30),
+        getMaxRunsPerPipeline: sinon.stub().returns(10),
+        getFavoritePipelines: sinon.stub().returns([]),
+        addFavoritePipeline: sinon.stub(),
+        removeFavoritePipeline: sinon.stub(),
+        dispose: sinon.stub()
+      } as any;
+
+      // Create mock context
+      mockContext = {
+        subscriptions: [],
+        workspaceState: {
+          get: sinon.stub(),
+          update: sinon.stub()
+        },
+        globalState: {
+          get: sinon.stub(),
+          update: sinon.stub()
+        },
+        secrets: {
+          get: sinon.stub(),
+          store: sinon.stub(),
+          delete: sinon.stub()
+        },
+        extensionUri: vscode.Uri.file('/test'),
+        extensionPath: '/test'
+      } as any;
+    } catch (error) {
+      console.error('Error in tree data provider test setup:', error);
+      throw error;
+    }
   });
 
   teardown(() => {
-    sinon.restore();
-    if (authChangeEmitter) {
-      authChangeEmitter.dispose();
+    try {
+      // Clean up specific resources instead of global restore
+      if (authChangeEmitter) {
+        authChangeEmitter.dispose();
+      }
+      // Don't call sinon.restore() as it affects other tests
+    } catch (error) {
+      console.error('Error in tree data provider test teardown:', error);
+      // Don't re-throw to avoid masking the actual test failure
     }
   });
 
   test('should show welcome item when not authenticated', async () => {
     mockAuthService.isAuthenticated.returns(false);
-    
+
     // Create tree provider with unauthenticated state
     const provider = new AzurePipelinesTreeDataProvider(
       mockAzureDevOpsService as any,
       mockAuthService as any,
-      mockContext
+      mockRealTimeService as any,
+      mockConfigService as any
     );
-    
+
     const children = await provider.getChildren();
-    
+
     assert.strictEqual(children.length, 1);
     assert.strictEqual(children[0].itemType, 'loading');
     assert.strictEqual(children[0].label, 'Welcome to Azure Pipelines Assistant');
@@ -196,16 +235,17 @@ suite('Tree Data Provider Test Suite', () => {
   test('should load projects when authenticated', async () => {
     mockAuthService.isAuthenticated.returns(true);
     mockAzureDevOpsService.getProjects.resolves([mockProject]);
-    
+
     // Create tree provider with authenticated state
     const provider = new AzurePipelinesTreeDataProvider(
       mockAzureDevOpsService as any,
       mockAuthService as any,
-      mockContext
+      mockRealTimeService as any,
+      mockConfigService as any
     );
-    
+
     const children = await provider.getChildren();
-    
+
     assert.strictEqual(children.length, 1);
     assert.strictEqual(children[0].itemType, 'project');
     assert.strictEqual(children[0].label, mockProject.name);
@@ -215,16 +255,17 @@ suite('Tree Data Provider Test Suite', () => {
     mockAuthService.isAuthenticated.returns(true);
     const authError = new AuthenticationError('Invalid token', 'INVALID_PAT');
     mockAzureDevOpsService.getProjects.rejects(authError);
-    
+
     // Create tree provider with authenticated state
     const provider = new AzurePipelinesTreeDataProvider(
       mockAzureDevOpsService as any,
       mockAuthService as any,
-      mockContext
+      mockRealTimeService as any,
+      mockConfigService as any
     );
-    
+
     const children = await provider.getChildren();
-    
+
     assert.strictEqual(children.length, 1);
     assert.strictEqual(children[0].itemType, 'error');
     assert.strictEqual(children[0].label, 'Invalid Personal Access Token');
@@ -237,20 +278,21 @@ suite('Tree Data Provider Test Suite', () => {
     const provider = new AzurePipelinesTreeDataProvider(
       mockAzureDevOpsService as any,
       mockAuthService as any,
-      mockContext
+      mockRealTimeService as any,
+      mockConfigService as any
     );
-    
+
     const fireStub = sinon.stub(provider['_onDidChangeTreeData'], 'fire');
-    
+
     provider.refresh();
-    
+
     assert.ok(fireStub.calledOnce);
     assert.ok(fireStub.calledWith());
   });
 
   test('WelcomeTreeItem should have correct properties', () => {
     const welcomeItem = new WelcomeTreeItem();
-    
+
     assert.strictEqual(welcomeItem.itemType, 'loading');
     assert.strictEqual(welcomeItem.id, 'welcome');
     assert.strictEqual(welcomeItem.label, 'Welcome to Azure Pipelines Assistant');

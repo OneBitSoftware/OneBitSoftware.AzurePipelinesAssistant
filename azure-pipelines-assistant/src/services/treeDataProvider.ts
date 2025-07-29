@@ -11,6 +11,8 @@ import {
   TreeItemType
 } from '../models';
 import { IAzureDevOpsService, IAuthenticationService, AuthenticationError } from '../interfaces';
+import { IRealTimeUpdateService } from '../interfaces/realTimeUpdateService';
+import { PipelineRun } from '../models/pipelineRun';
 
 /**
  * Interface for the tree data provider
@@ -106,6 +108,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
   constructor(
     private azureDevOpsService: IAzureDevOpsService,
     private authenticationService: IAuthenticationService,
+    private realTimeUpdateService: IRealTimeUpdateService,
     context: vscode.ExtensionContext
   ) {
     // Initialize authentication state
@@ -115,6 +118,11 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
     this.authenticationService.onAuthenticationChanged((isAuthenticated) => {
       this._isAuthenticated = isAuthenticated;
       this.refresh();
+    });
+
+    // Listen for real-time run status changes
+    this.realTimeUpdateService.onRunStatusChanged((event) => {
+      this.handleRunStatusChange(event);
     });
   }
   
@@ -366,6 +374,21 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
         pipelineItem.data.id,
         pipelineItem.data.project.id
       );
+
+      // Subscribe to real-time updates for active runs
+      runs.forEach(run => {
+        if (run.state === 'inProgress') {
+          this.realTimeUpdateService.subscribeToRunUpdates(
+            run.id,
+            run.pipeline.id,
+            run.pipeline.project.id,
+            (updatedRun) => {
+              this.handleRunUpdate(updatedRun);
+            }
+          );
+        }
+      });
+
       return runs.map(run => new PipelineRunTreeItem(run));
     } catch (error) {
       console.error('Error loading pipeline runs:', error);
@@ -417,6 +440,45 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
   }
   
   /**
+   * Handle real-time run status changes
+   */
+  private handleRunStatusChange(event: any): void {
+    // Find the run item in cache and refresh it
+    const runItem = this.findRunItem(event.runId, event.pipelineId, event.projectId);
+    if (runItem) {
+      this.refreshItem(runItem);
+    }
+  }
+
+  /**
+   * Handle individual run updates from real-time service
+   */
+  private handleRunUpdate(updatedRun: PipelineRun): void {
+    // Find the run item and refresh its parent pipeline
+    const runItem = this.findRunItem(updatedRun.id, updatedRun.pipeline.id, updatedRun.pipeline.project.id);
+    if (runItem && runItem.parent) {
+      this.refreshItem(runItem.parent);
+    }
+  }
+
+  /**
+   * Find a run item in the cache
+   */
+  private findRunItem(runId: number, pipelineId: number, projectId: string): IAzurePipelinesTreeItem | undefined {
+    for (const [key, item] of this._itemCache.entries()) {
+      if (item.itemType === 'run') {
+        const runItem = item as PipelineRunTreeItem;
+        if (runItem.data.id === runId && 
+            runItem.data.pipeline.id === pipelineId && 
+            runItem.data.pipeline.project.id === projectId) {
+          return runItem;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Clear cached children for all descendants of an item
    */
   private clearDescendantCache(item: IAzurePipelinesTreeItem): void {
@@ -427,5 +489,12 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
         this.clearDescendantCache(child);
       });
     }
+  }
+
+  /**
+   * Dispose of resources
+   */
+  dispose(): void {
+    this.realTimeUpdateService.dispose();
   }
 }
