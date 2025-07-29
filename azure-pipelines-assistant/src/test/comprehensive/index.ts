@@ -189,7 +189,7 @@ export class ComprehensiveTestRunner {
       try {
         const globPattern = new glob.Glob(pattern, { cwd: testsRoot });
         const matchedFiles = [];
-        for await (const file of globPattern) matchedFiles.push(file); // Array.fromAsync ES2023+
+        for await (const file of globPattern) { matchedFiles.push(file); } // Array.fromAsync ES2023+
 
         matchedFiles.forEach((file: string) => {
           const fullPath = path.resolve(testsRoot, file);
