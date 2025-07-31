@@ -1,7 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up project structure and Activity Bar integration
-
+- [ ] 1. Set up project structure and core structure
   - Install Yeoman and VS Code Extension generator: `npm install -g yo generator-code`
   - Generate VS Code extension project using `yo code` with TypeScript template
   - Configure extension manifest (package.json) with Activity Bar view container and proper activation events
