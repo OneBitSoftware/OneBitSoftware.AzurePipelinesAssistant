@@ -1,8 +1,9 @@
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 import * as sinon from 'sinon';
+import * as vscode from 'vscode';
+import { AuthenticationError } from '../errors/errorTypes';
+import { Credentials } from '../interfaces/authenticationService';
 import { AuthenticationService } from '../services/authenticationService';
-import { AuthenticationError, Credentials, ValidationResult } from '../interfaces/authenticationService';
 
 suite('AuthenticationService Test Suite', () => {
   let authService: AuthenticationService;
@@ -57,7 +58,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'INVALID_PAT');
+        assert.strictEqual(error.errorCode, 'AUTH_INVALID_PAT');
         assert.strictEqual(error.message, 'Organization and Personal Access Token are required');
       }
     });
@@ -68,7 +69,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'INVALID_PAT');
+        assert.strictEqual(error.errorCode, 'AUTH_INVALID_PAT');
         assert.strictEqual(error.message, 'Organization and Personal Access Token are required');
       }
     });
@@ -228,7 +229,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'INVALID_PAT');
+        assert.strictEqual(error.errorCode, 'AUTH_INVALID_PAT');
         assert.strictEqual(error.message, 'Invalid credentials: organization and PAT are required');
       }
     });
@@ -244,7 +245,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'INVALID_PAT');
+        assert.strictEqual(error.errorCode, 'AUTH_INVALID_PAT');
         assert.strictEqual(error.message, 'Invalid credentials: organization and PAT are required');
       }
     });
@@ -261,7 +262,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'NETWORK_ERROR');
+        assert.strictEqual(error.errorCode, 'AUTH_NETWORK_ERROR');
         assert.strictEqual(error.message, 'Failed to store credentials securely');
       }
     });
@@ -286,7 +287,7 @@ suite('AuthenticationService Test Suite', () => {
         assert.fail('Expected AuthenticationError to be thrown');
       } catch (error) {
         assert.ok(error instanceof AuthenticationError);
-        assert.strictEqual(error.errorCode, 'NETWORK_ERROR');
+        assert.strictEqual(error.errorCode, 'AUTH_NETWORK_ERROR');
         assert.strictEqual(error.message, 'Failed to clear credentials');
       }
     });
