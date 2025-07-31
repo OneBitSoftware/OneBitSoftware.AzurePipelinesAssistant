@@ -8,15 +8,25 @@ The Azure Pipeline Runner is a Visual Studio Code extension that provides the ab
 
 ### Requirement 1
 
+**User Story:** As a developer using VS Code, I want to access the Azure Pipelines Assistant and see Azure DevOps pipelines through a dedicated Activity Bar icon, so that I can quickly access pipeline functionality without navigating through other panels.
+
+#### Acceptance Criteria
+
+1. WHEN the extension is installed THEN the system SHALL display a dedicated Azure Pipelines icon in the VS Code Activity Bar
+2. WHEN a user clicks the Activity Bar icon THEN the system SHALL open the Azure Pipelines view panel
+3. WHEN the extension is not configured THEN the system SHALL show the Activity Bar icon but display a configuration welcome view
+4. WHEN the user has configured the extension THEN the system SHALL display a tree view showing all pipelines organized by project
+5. WHEN a user expands a project node THEN the system SHALL display all pipelines within that project
+
+### Requirement 1.1
+
 **User Story:** As a developer using VS Code, I want to view all my Azure DevOps pipelines in a tree structure, so that I can quickly navigate and monitor my pipelines without leaving my editor.
 
 #### Acceptance Criteria
 
-1. WHEN the extension is activated THEN the system SHALL display a tree view showing all pipelines organized by project
-2. WHEN a user expands a project node THEN the system SHALL display all pipelines within that project
-3. WHEN a user clicks on a pipeline THEN the system SHALL display pipeline details including recent runs and statistics
-4. WHEN the user has not configured the extension THEN the system SHALL display a welcome panel with configuration instructions
-5. IF the user's PAT lacks required permissions THEN the system SHALL display specific error messages about missing permissions
+1. WHEN a user clicks on a pipeline THEN the system SHALL display pipeline details including recent runs and statistics
+2. WHEN the user has not configured the extension THEN the system SHALL display a welcome panel with configuration instructions in the Activity Bar view
+3. IF the user's PAT lacks required permissions THEN the system SHALL display specific error messages about missing permissions
 
 ### Requirement 2
 
@@ -68,15 +78,17 @@ The Azure Pipeline Runner is a Visual Studio Code extension that provides the ab
 
 ### Requirement 5
 
-**User Story:** As a developer, I want to authenticate with Azure DevOps using a Personal Access Token, so that I can securely access my organization's pipeline data.
+**User Story:** As a developer, I want to authenticate with Azure DevOps using a Personal Access Token through an intuitive configuration interface, so that I can securely access my organization's pipeline data.
 
 #### Acceptance Criteria
 
-1. WHEN configuring the extension THEN the system SHALL require an Azure DevOps organization name and Personal Access Token
-2. WHEN a PAT is provided THEN the system SHALL validate the token has required permissions (Build Read, Code Read, Project and Team Read, Release Read)
-3. WHEN authentication fails THEN the system SHALL display clear error messages with setup instructions
-4. WHEN a PAT expires THEN the system SHALL automatically detect expiration and notify the user
-5. WHEN storing authentication data THEN the system SHALL use VS Code's secure storage for the PAT
+1. WHEN the extension is not configured THEN the system SHALL display a welcome view in the Activity Bar panel with clear setup instructions
+2. WHEN a user clicks "Configure" in the welcome view THEN the system SHALL prompt for Azure DevOps organization name and Personal Access Token
+3. WHEN a PAT is provided THEN the system SHALL validate the token has required permissions (Build Read, Code Read, Project and Team Read, Release Read)
+4. WHEN authentication fails THEN the system SHALL display clear error messages with setup instructions in the Activity Bar view
+5. WHEN a PAT expires THEN the system SHALL automatically detect expiration and notify the user
+6. WHEN storing authentication data THEN the system SHALL use VS Code's secure storage for the PAT
+7. WHEN configuration is successful THEN the system SHALL immediately refresh the Activity Bar view to show pipeline data
 
 ### Requirement 6
 
@@ -127,6 +139,20 @@ The Azure Pipeline Runner is a Visual Studio Code extension that provides the ab
 5. WHEN packaging the extension THEN the system SHALL use webpack or esbuild for optimal bundling and performance
 
 ### Requirement 10
+
+**User Story:** As a new user, I want a guided configuration experience in the Activity Bar view, so that I can easily set up the extension without needing external documentation.
+
+#### Acceptance Criteria
+
+1. WHEN the extension is first installed THEN the system SHALL display a welcome view with step-by-step configuration instructions
+2. WHEN displaying the welcome view THEN the system SHALL include input fields for organization name and Personal Access Token
+3. WHEN a user enters configuration details THEN the system SHALL provide real-time validation feedback
+4. WHEN configuration is incomplete THEN the system SHALL highlight missing required fields with helpful error messages
+5. WHEN configuration is successful THEN the system SHALL display a success message and automatically transition to the pipeline tree view
+6. WHEN configuration fails THEN the system SHALL display specific error messages and allow the user to retry without losing entered data
+7. WHEN the user needs help THEN the system SHALL provide links to Azure DevOps PAT creation documentation
+
+### Requirement 11
 
 **User Story:** As a developer, I want comprehensive error handling and recovery, so that the extension remains stable and provides helpful feedback when issues occur.
 

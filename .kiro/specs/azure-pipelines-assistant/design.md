@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Azure Pipelines Assistant is a VS Code extension that provides comprehensive Azure DevOps pipeline management capabilities directly within the editor. The extension follows a modular architecture with clear separation of concerns between data providers, services, and UI components. It leverages VS Code's extension APIs for tree views, webviews, and secure storage while maintaining compatibility across VS Code, Cursor, and Windsurf IDEs.
+The Azure Pipelines Assistant is a VS Code extension that provides comprehensive Azure DevOps pipeline management capabilities directly within the editor through a dedicated Activity Bar icon and view panel. The extension follows a modular architecture with clear separation of concerns between data providers, services, and UI components. It features an intuitive configuration interface that guides users through setup when no configuration is present. The extension leverages VS Code's extension APIs for Activity Bar integration, tree views, webviews, and secure storage while maintaining compatibility across VS Code, Cursor, and Windsurf IDEs.
 
 ## Architecture
 
@@ -12,46 +12,58 @@ The Azure Pipelines Assistant is a VS Code extension that provides comprehensive
 graph TB
     subgraph "VS Code Extension Host"
         A[Extension Entry Point] --> B[Command Manager]
-        A --> C[Tree View Providers]
-        A --> D[Webview Providers]
+        A --> C[Activity Bar View Provider]
+        A --> D[Configuration UI Provider]
+        A --> E[Tree View Providers]
+        A --> F[Webview Providers]
         
-        B --> E[Azure DevOps Service]
-        C --> E
-        D --> E
+        B --> G[Azure DevOps Service]
+        C --> G
+        D --> G
+        E --> G
+        F --> G
         
-        E --> F[Authentication Service]
-        E --> G[Cache Service]
-        E --> H[API Client]
+        G --> H[Authentication Service]
+        G --> I[Cache Service]
+        G --> J[API Client]
         
-        H --> I[Azure DevOps REST API]
+        J --> K[Azure DevOps REST API]
     end
     
     subgraph "VS Code UI"
-        J[Tree View Panel]
-        K[Webview Panels]
-        L[Status Bar]
-        M[Command Palette]
+        L[Activity Bar Icon]
+        M[Activity Bar View Panel]
+        N[Configuration Welcome View]
+        O[Pipeline Tree View]
+        P[Webview Panels]
+        Q[Status Bar]
+        R[Command Palette]
     end
     
-    C --> J
-    D --> K
-    B --> L
-    B --> M
+    C --> L
+    C --> M
+    D --> N
+    E --> O
+    F --> P
+    B --> Q
+    B --> R
 ```
 
 ### Extension Activation
 
 The extension activates when:
-- VS Code starts (if previously configured)
-- User opens the Azure Pipelines view
+- VS Code starts (Activity Bar icon is always visible)
+- User clicks the Azure Pipelines Activity Bar icon
 - User executes any Azure Pipelines command
 
 ### Data Flow
 
-1. **Authentication**: User provides organization and PAT through settings
-2. **Data Fetching**: Services fetch data from Azure DevOps API with caching
-3. **UI Updates**: Tree providers and webviews update based on data changes
-4. **User Actions**: Commands trigger API calls and UI updates
+1. **Initial Load**: Extension checks for existing configuration and displays appropriate view (welcome or pipeline tree)
+2. **Configuration**: User provides organization and PAT through the integrated configuration UI
+3. **Authentication**: Authentication service validates credentials and stores them securely
+4. **Data Fetching**: Services fetch data from Azure DevOps API with caching
+5. **UI Updates**: Activity Bar view transitions from configuration to pipeline tree, and all views update based on data changes
+6. **User Actions**: Commands trigger API calls and UI updates
 
 ## Components and Interfaces
 
@@ -113,6 +125,242 @@ interface ICacheService {
 }
 ```
 
+### Activity Bar and View Container
+
+#### Activity Bar Integration
+```typescript
+// Package.json contribution
+{
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "azurePipelinesContainer",
+          "title": "Azure Pipelines",
+          "icon": "$(azure-devops)"
+        }
+      ]
+    },
+    "views": {
+      "azurePipelinesContainer": [
+        {
+          "id": "azurePipelinesView",
+          "name": "Pipelines",
+          "when": "true"
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Configuration Welcome View Provider
+```typescript
+class ConfigurationWelcomeProvider implements vscode.WebviewViewProvider {
+  constructor(
+    private context: vscode.ExtensionContext,
+    private authService: IAuthenticationService
+  ) {}
+  
+  resolveWebviewView(webviewView: vscode.WebviewView): void {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.context.extensionUri]
+    };
+    
+    webviewView.webview.html = this.getWelcomeHtml();
+    this.setupMessageHandling(webviewView.webview);
+  }
+  
+  private getWelcomeHtml(): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Azure Pipelines Configuration</title>
+          <style>
+            body { 
+              font-family: var(--vscode-font-family);
+              padding: 20px;
+              color: var(--vscode-foreground);
+            }
+            .config-form {
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+            }
+            .form-group {
+              display: flex;
+              flex-direction: column;
+              gap: 5px;
+            }
+            label {
+              font-weight: bold;
+              color: var(--vscode-input-foreground);
+            }
+            input {
+              padding: 8px;
+              border: 1px solid var(--vscode-input-border);
+              background: var(--vscode-input-background);
+              color: var(--vscode-input-foreground);
+              border-radius: 2px;
+            }
+            button {
+              padding: 10px 20px;
+              background: var(--vscode-button-background);
+              color: var(--vscode-button-foreground);
+              border: none;
+              border-radius: 2px;
+              cursor: pointer;
+            }
+            button:hover {
+              background: var(--vscode-button-hoverBackground);
+            }
+            .error {
+              color: var(--vscode-errorForeground);
+              font-size: 12px;
+            }
+            .success {
+              color: var(--vscode-terminal-ansiGreen);
+              font-size: 12px;
+            }
+            .help-link {
+              color: var(--vscode-textLink-foreground);
+              text-decoration: none;
+            }
+          </style>
+        </head>
+        <body>
+          <h2>Welcome to Azure Pipelines Assistant</h2>
+          <p>To get started, please configure your Azure DevOps connection:</p>
+          
+          <form class="config-form" id="configForm">
+            <div class="form-group">
+              <label for="organization">Organization Name</label>
+              <input 
+                type="text" 
+                id="organization" 
+                placeholder="e.g., mycompany (from https://dev.azure.com/mycompany)"
+                required
+              />
+              <div class="error" id="orgError"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="pat">Personal Access Token</label>
+              <input 
+                type="password" 
+                id="pat" 
+                placeholder="Enter your Azure DevOps PAT"
+                required
+              />
+              <div class="error" id="patError"></div>
+              <small>
+                Need a PAT? 
+                <a href="#" class="help-link" onclick="openPatHelp()">
+                  Learn how to create one
+                </a>
+              </small>
+            </div>
+            
+            <button type="submit" id="configureBtn">Configure Extension</button>
+            <div class="error" id="generalError"></div>
+            <div class="success" id="successMessage"></div>
+          </form>
+          
+          <script>
+            const vscode = acquireVsCodeApi();
+            
+            document.getElementById('configForm').addEventListener('submit', (e) => {
+              e.preventDefault();
+              const organization = document.getElementById('organization').value;
+              const pat = document.getElementById('pat').value;
+              
+              if (!organization || !pat) {
+                document.getElementById('generalError').textContent = 'Please fill in all fields';
+                return;
+              }
+              
+              vscode.postMessage({
+                command: 'configure',
+                organization,
+                pat
+              });
+            });
+            
+            function openPatHelp() {
+              vscode.postMessage({
+                command: 'openPatHelp'
+              });
+            }
+            
+            window.addEventListener('message', event => {
+              const message = event.data;
+              switch (message.command) {
+                case 'configurationResult':
+                  if (message.success) {
+                    document.getElementById('successMessage').textContent = 'Configuration successful!';
+                    document.getElementById('generalError').textContent = '';
+                  } else {
+                    document.getElementById('generalError').textContent = message.error;
+                    document.getElementById('successMessage').textContent = '';
+                  }
+                  break;
+              }
+            });
+          </script>
+        </body>
+      </html>
+    `;
+  }
+  
+  private setupMessageHandling(webview: vscode.Webview): void {
+    webview.onDidReceiveMessage(async (message) => {
+      switch (message.command) {
+        case 'configure':
+          await this.handleConfiguration(webview, message.organization, message.pat);
+          break;
+        case 'openPatHelp':
+          vscode.env.openExternal(vscode.Uri.parse(
+            'https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate'
+          ));
+          break;
+      }
+    });
+  }
+  
+  private async handleConfiguration(webview: vscode.Webview, organization: string, pat: string): Promise<void> {
+    try {
+      const result = await this.authService.validateCredentials(organization, pat);
+      if (result.isValid) {
+        await this.authService.storeCredentials({ organization, pat });
+        webview.postMessage({
+          command: 'configurationResult',
+          success: true
+        });
+        
+        // Trigger view refresh to show pipeline tree
+        vscode.commands.executeCommand('azurePipelinesAssistant.refresh');
+      } else {
+        webview.postMessage({
+          command: 'configurationResult',
+          success: false,
+          error: result.errorMessage || 'Invalid credentials'
+        });
+      }
+    } catch (error) {
+      webview.postMessage({
+        command: 'configurationResult',
+        success: false,
+        error: 'Configuration failed. Please check your credentials and try again.'
+      });
+    }
+  }
+}
+```
+
 ### Tree View Providers
 
 #### Pipeline Tree Provider
@@ -130,8 +378,37 @@ class PipelineTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     // Return tree item with appropriate icons, labels, and context values
   }
   
-  getChildren(element?: TreeItem): Promise<TreeItem[]> {
+  async getChildren(element?: TreeItem): Promise<TreeItem[]> {
+    // Check if authenticated first
+    if (!this.authService.isAuthenticated()) {
+      return []; // Return empty array - welcome view will be shown instead
+    }
+    
     // Return hierarchical structure: Projects → Pipelines → Runs
+    try {
+      if (!element) {
+        const projects = await this.azureDevOpsService.getProjects();
+        return projects.map(project => new ProjectTreeItem(project));
+      }
+      
+      if (element instanceof ProjectTreeItem) {
+        const pipelines = await this.azureDevOpsService.getPipelines(element.project.id);
+        return pipelines.map(pipeline => new PipelineTreeItem(pipeline));
+      }
+      
+      if (element instanceof PipelineTreeItem) {
+        const runs = await this.azureDevOpsService.getPipelineRuns(
+          element.pipeline.id, 
+          element.pipeline.project.id
+        );
+        return runs.map(run => new RunTreeItem(run));
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error loading tree data:', error);
+      return [];
+    }
   }
   
   refresh(): void {
@@ -179,6 +456,62 @@ class RunTreeItem extends TreeItem {
       case 'canceled': return new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('testing.iconSkipped'));
       default: return new vscode.ThemeIcon('clock');
     }
+  }
+}
+```
+
+#### Activity Bar View Manager
+```typescript
+class ActivityBarViewManager {
+  private currentView: 'welcome' | 'pipelines' = 'welcome';
+  
+  constructor(
+    private context: vscode.ExtensionContext,
+    private authService: IAuthenticationService,
+    private pipelineTreeProvider: PipelineTreeProvider,
+    private configWelcomeProvider: ConfigurationWelcomeProvider
+  ) {
+    this.initialize();
+  }
+  
+  private async initialize(): Promise<void> {
+    // Register the webview view provider for welcome screen
+    vscode.window.registerWebviewViewProvider(
+      'azurePipelinesView',
+      this.configWelcomeProvider
+    );
+    
+    // Check authentication status and switch views accordingly
+    await this.updateView();
+    
+    // Listen for authentication changes
+    this.authService.onAuthenticationChanged(() => {
+      this.updateView();
+    });
+  }
+  
+  private async updateView(): Promise<void> {
+    const isAuthenticated = this.authService.isAuthenticated();
+    
+    if (isAuthenticated && this.currentView === 'welcome') {
+      // Switch to tree view
+      this.currentView = 'pipelines';
+      await this.switchToTreeView();
+    } else if (!isAuthenticated && this.currentView === 'pipelines') {
+      // Switch to welcome view
+      this.currentView = 'welcome';
+      await this.switchToWelcomeView();
+    }
+  }
+  
+  private async switchToTreeView(): Promise<void> {
+    // Update package.json contribution dynamically or use when clauses
+    await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.configured', true);
+    this.pipelineTreeProvider.refresh();
+  }
+  
+  private async switchToWelcomeView(): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.configured', false);
   }
 }
 ```
