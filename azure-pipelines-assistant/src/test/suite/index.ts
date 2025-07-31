@@ -30,7 +30,9 @@ export function run(): Promise<void> {
       'extension.test.js',
       'authenticationService.test.js',
       'cacheService.test.js',
-      'commands.test.js'
+      'commands.test.js',
+      'pipelineTreeProvider.test.js',
+      'configurationWelcomeProvider.test.js'
     ];
 
     try {

@@ -47,7 +47,7 @@ export const CONTEXT_KEYS = {
  * Tree view IDs
  */
 export const TREE_VIEW_IDS = {
-  AZURE_PIPELINES_EXPLORER: 'azurePipelinesExplorer'
+  AZURE_PIPELINES_VIEW: 'azurePipelinesView'
 } as const;
 
 /**
@@ -67,25 +67,25 @@ export const API_ENDPOINTS = {
   PROJECTS: '/_apis/projects',
   PIPELINES: (projectId: string) => `/${projectId}/_apis/pipelines`,
   PIPELINE: (projectId: string, pipelineId: number) => `/${projectId}/_apis/pipelines/${pipelineId}`,
-  
+
   // Pipeline runs
   RUNS: (projectId: string, pipelineId: number) => `/${projectId}/_apis/pipelines/${pipelineId}/runs`,
   RUN: (projectId: string, pipelineId: number, runId: number) => `/${projectId}/_apis/pipelines/${pipelineId}/runs/${runId}`,
   RUN_LOGS: (projectId: string, runId: number) => `/${projectId}/_apis/build/builds/${runId}/logs`,
   RUN_ARTIFACTS: (projectId: string, runId: number) => `/${projectId}/_apis/build/builds/${runId}/artifacts`,
-  
+
   // Build definitions (legacy API for some operations)
   BUILD_DEFINITIONS: (projectId: string) => `/${projectId}/_apis/build/definitions`,
   BUILD_DEFINITION: (projectId: string, definitionId: number) => `/${projectId}/_apis/build/definitions/${definitionId}`,
-  
+
   // Builds
   BUILDS: (projectId: string) => `/${projectId}/_apis/build/builds`,
   BUILD: (projectId: string, buildId: number) => `/${projectId}/_apis/build/builds/${buildId}`,
   BUILD_TIMELINE: (projectId: string, buildId: number) => `/${projectId}/_apis/build/builds/${buildId}/timeline`,
-  
+
   // User profile (for validation)
   PROFILE: '/_apis/profile/profiles/me',
-  
+
   // Connection data (for validation)
   CONNECTION_DATA: '/_apis/connectionData'
 } as const;

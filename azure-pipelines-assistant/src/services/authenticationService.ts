@@ -1,24 +1,24 @@
-import * as vscode from 'vscode';
 import * as https from 'https';
-import { 
-  IAuthenticationService, 
-  Credentials, 
-  ValidationResult, 
-  Permission
-} from '../interfaces/authenticationService';
-import { AuthenticationError } from '../errors/errorTypes';
+import * as vscode from 'vscode';
 import { ErrorHandler } from '../errors/errorHandler';
 import { withRetry } from '../errors/errorRecovery';
+import { AuthenticationError } from '../errors/errorTypes';
+import {
+  Credentials,
+  IAuthenticationService,
+  Permission,
+  ValidationResult
+} from '../interfaces/authenticationService';
 
 /**
  * Implementation of the authentication service for Azure DevOps
  */
 export class AuthenticationService implements IAuthenticationService {
   private static readonly CREDENTIALS_KEY = 'azurePipelinesAssistant.credentials';
-  
+
   private readonly _onAuthenticationChanged = new vscode.EventEmitter<boolean>();
   public readonly onAuthenticationChanged = this._onAuthenticationChanged.event;
-  
+
   private _isAuthenticated = false;
   private _currentOrganization: string | null = null;
 
@@ -44,13 +44,13 @@ export class AuthenticationService implements IAuthenticationService {
         'Unable to load stored credentials',
         { operation: 'initializeAuthenticationState' }
       );
-      
+
       if (this.errorHandler) {
         await this.errorHandler.handleErrorSilently(authError);
       } else {
         console.error('Failed to initialize authentication state:', error);
       }
-      
+
       this._isAuthenticated = false;
       this._currentOrganization = null;
     }
@@ -67,12 +67,12 @@ export class AuthenticationService implements IAuthenticationService {
     try {
       // First, validate the PAT by getting user profile
       const userInfo = await this.getUserProfile(organization, pat);
-      
+
       // Then check permissions by attempting to access required APIs
       const permissions = await this.checkPermissions(organization, pat);
-      
+
       const requiredPermissions = this.getRequiredPermissions();
-      const missingPermissions = requiredPermissions.filter(required => 
+      const missingPermissions = requiredPermissions.filter(required =>
         !permissions.some(granted => granted.name === required.name)
       );
 
@@ -91,7 +91,7 @@ export class AuthenticationService implements IAuthenticationService {
           errorMessage: error.message
         };
       }
-      
+
       throw new AuthenticationError(
         `Failed to validate credentials: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'NETWORK_ERROR'
@@ -104,11 +104,11 @@ export class AuthenticationService implements IAuthenticationService {
    */
   private async getUserProfile(organization: string, pat: string): Promise<{ displayName: string; emailAddress: string; id: string }> {
     const url = `https://dev.azure.com/${organization}/_apis/profile/profiles/me?api-version=6.0`;
-    
+
     try {
       const response = await this.makeHttpRequest(url, pat);
       const data = JSON.parse(response);
-      
+
       return {
         displayName: data.displayName || 'Unknown',
         emailAddress: data.emailAddress || 'Unknown',
@@ -194,7 +194,7 @@ export class AuthenticationService implements IAuthenticationService {
       return new Promise<string>((resolve, reject) => {
         const auth = Buffer.from(`:${pat}`).toString('base64');
         const urlObj = new URL(url);
-        
+
         const options = {
           hostname: urlObj.hostname,
           port: urlObj.port || 443,
@@ -209,11 +209,11 @@ export class AuthenticationService implements IAuthenticationService {
 
         const req = https.request(options, (res) => {
           let data = '';
-          
+
           res.on('data', (chunk) => {
             data += chunk;
           });
-          
+
           res.on('end', () => {
             if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
               resolve(data);
@@ -251,7 +251,7 @@ export class AuthenticationService implements IAuthenticationService {
       }
 
       const credentials = JSON.parse(credentialsJson) as Credentials;
-      
+
       // Validate the structure
       if (!credentials.organization || !credentials.personalAccessToken) {
         console.warn('Invalid credentials structure found in storage');
@@ -277,14 +277,14 @@ export class AuthenticationService implements IAuthenticationService {
     try {
       const credentialsJson = JSON.stringify(credentials);
       await this.context.secrets.store(AuthenticationService.CREDENTIALS_KEY, credentialsJson);
-      
+
       // Update internal state
       this._isAuthenticated = true;
       this._currentOrganization = credentials.organization;
-      
+
       // Fire authentication changed event
       this._onAuthenticationChanged.fire(true);
-      
+
       console.log('Credentials stored successfully');
     } catch (error) {
       console.error('Failed to store credentials:', error);
@@ -298,14 +298,14 @@ export class AuthenticationService implements IAuthenticationService {
   public async clearCredentials(): Promise<void> {
     try {
       await this.context.secrets.delete(AuthenticationService.CREDENTIALS_KEY);
-      
+
       // Update internal state
       this._isAuthenticated = false;
       this._currentOrganization = null;
-      
+
       // Fire authentication changed event
       this._onAuthenticationChanged.fire(false);
-      
+
       console.log('Credentials cleared successfully');
     } catch (error) {
       console.error('Failed to clear credentials:', error);

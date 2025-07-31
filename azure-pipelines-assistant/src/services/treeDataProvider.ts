@@ -1,17 +1,18 @@
 import * as vscode from 'vscode';
-import { 
-  IAzurePipelinesTreeItem,
-  ProjectTreeItem,
-  PipelineTreeItem,
-  PipelineRunTreeItem,
-  StageTreeItem,
-  JobTreeItem,
-  TaskTreeItem,
+import { AuthenticationError } from '../errors/errorTypes';
+import { IAuthenticationService, IAzureDevOpsService } from '../interfaces';
+import { IRealTimeUpdateService } from '../interfaces/realTimeUpdateService';
+import {
   ErrorTreeItem,
+  IAzurePipelinesTreeItem,
+  JobTreeItem,
+  PipelineRunTreeItem,
+  PipelineTreeItem,
+  ProjectTreeItem,
+  StageTreeItem,
+  TaskTreeItem,
   TreeItemType
 } from '../models';
-import { IAzureDevOpsService, IAuthenticationService, AuthenticationError } from '../interfaces';
-import { IRealTimeUpdateService } from '../interfaces/realTimeUpdateService';
 import { PipelineRun } from '../models/pipelineRun';
 
 /**
@@ -22,37 +23,37 @@ export interface IAzurePipelinesTreeDataProvider extends vscode.TreeDataProvider
    * Refresh the tree view
    */
   refresh(): void;
-  
+
   /**
    * Refresh a specific item
    */
   refreshItem(item: IAzurePipelinesTreeItem): void;
-  
+
   /**
    * Get tree item for a specific data object
    */
   getTreeItem(element: IAzurePipelinesTreeItem): vscode.TreeItem;
-  
+
   /**
    * Get children for a tree item
    */
   getChildren(element?: IAzurePipelinesTreeItem): Promise<IAzurePipelinesTreeItem[]>;
-  
+
   /**
    * Get parent of a tree item
    */
   getParent(element: IAzurePipelinesTreeItem): IAzurePipelinesTreeItem | undefined;
-  
+
   /**
    * Reveal and select a specific item
    */
   reveal(item: IAzurePipelinesTreeItem): Promise<void>;
-  
+
   /**
    * Find tree item by ID
    */
   findItem(id: string): IAzurePipelinesTreeItem | undefined;
-  
+
   /**
    * Get all items of a specific type
    */
@@ -69,14 +70,14 @@ export class WelcomeTreeItem implements IAzurePipelinesTreeItem {
   readonly hasChildren: boolean = false;
   readonly contextValue: string = 'welcome';
   readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None;
-  
+
   parent?: IAzurePipelinesTreeItem;
   tooltip?: string | vscode.MarkdownString;
   description?: string;
   iconPath?: vscode.ThemeIcon;
   command?: vscode.Command;
   resourceUri?: vscode.Uri;
-  
+
   constructor() {
     this.iconPath = new vscode.ThemeIcon('info');
     this.tooltip = new vscode.MarkdownString(
@@ -99,12 +100,12 @@ export class WelcomeTreeItem implements IAzurePipelinesTreeItem {
 export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataProvider {
   private _onDidChangeTreeData: vscode.EventEmitter<IAzurePipelinesTreeItem | undefined | null | void> = new vscode.EventEmitter<IAzurePipelinesTreeItem | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<IAzurePipelinesTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
-  
+
   private _treeView?: vscode.TreeView<IAzurePipelinesTreeItem>;
   private _itemCache = new Map<string, IAzurePipelinesTreeItem>();
   private _childrenCache = new Map<string, IAzurePipelinesTreeItem[]>();
   private _isAuthenticated: boolean = false;
-  
+
   constructor(
     private azureDevOpsService: IAzureDevOpsService,
     private authenticationService: IAuthenticationService,
@@ -113,7 +114,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
   ) {
     // Initialize authentication state
     this._isAuthenticated = this.authenticationService.isAuthenticated();
-    
+
     // Listen for authentication changes
     this.authenticationService.onAuthenticationChanged((isAuthenticated) => {
       this._isAuthenticated = isAuthenticated;
@@ -125,14 +126,14 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       this.handleRunStatusChange(event);
     });
   }
-  
+
   /**
    * Set the tree view instance
    */
   setTreeView(treeView: vscode.TreeView<IAzurePipelinesTreeItem>): void {
     this._treeView = treeView;
   }
-  
+
   /**
    * Refresh the entire tree view
    */
@@ -141,20 +142,20 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
     this._childrenCache.clear();
     this._onDidChangeTreeData.fire();
   }
-  
+
   /**
    * Refresh a specific item and its children
    */
   refreshItem(item: IAzurePipelinesTreeItem): void {
     // Clear cached children for this item
     this._childrenCache.delete(item.id);
-    
+
     // Clear cached children for all descendants
     this.clearDescendantCache(item);
-    
+
     this._onDidChangeTreeData.fire(item);
   }
-  
+
   /**
    * Get tree item representation
    */
@@ -163,7 +164,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
     this._itemCache.set(element.id, element);
     return element;
   }
-  
+
   /**
    * Get children for a tree item
    */
@@ -176,15 +177,15 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
         }
         return await this.getProjects();
       }
-      
+
       // Check cache first
       const cached = this._childrenCache.get(element.id);
       if (cached) {
         return cached;
       }
-      
+
       let children: IAzurePipelinesTreeItem[] = [];
-      
+
       switch (element.itemType) {
         case 'project':
           children = await this.getPipelines(element as ProjectTreeItem);
@@ -208,29 +209,29 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
         default:
           children = [];
       }
-      
+
       // Set parent references
       children.forEach(child => {
         child.parent = element;
       });
-      
+
       // Cache the results
       this._childrenCache.set(element.id, children);
-      
+
       return children;
     } catch (error) {
       console.error('Error getting children:', error);
       return this.handleError(error, element);
     }
   }
-  
+
   /**
    * Get parent of a tree item
    */
   getParent(element: IAzurePipelinesTreeItem): IAzurePipelinesTreeItem | undefined {
     return element.parent;
   }
-  
+
   /**
    * Reveal and select a specific item
    */
@@ -239,28 +240,28 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       await this._treeView.reveal(item, { select: true, focus: true, expand: true });
     }
   }
-  
+
   /**
    * Find tree item by ID
    */
   findItem(id: string): IAzurePipelinesTreeItem | undefined {
     return this._itemCache.get(id);
   }
-  
+
   /**
    * Get all items of a specific type
    */
   getItemsByType(type: TreeItemType): IAzurePipelinesTreeItem[] {
     return Array.from(this._itemCache.values()).filter(item => item.itemType === type);
   }
-  
+
   /**
    * Handle errors with user-friendly messages
    */
   private handleError(error: any, element?: IAzurePipelinesTreeItem): IAzurePipelinesTreeItem[] {
     let errorMessage = 'Unknown error occurred';
     let actionCommand: vscode.Command | undefined;
-    
+
     if (error instanceof AuthenticationError) {
       switch (error.errorCode) {
         case 'INVALID_PAT':
@@ -327,12 +328,12 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
         errorMessage = `Error: ${error.message}`;
       }
     }
-    
+
     const errorItem = new ErrorTreeItem(errorMessage);
     if (actionCommand) {
       errorItem.command = actionCommand;
     }
-    
+
     return [errorItem];
   }
 
@@ -351,7 +352,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return this.handleError(error);
     }
   }
-  
+
   /**
    * Get pipelines for a project
    */
@@ -364,7 +365,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return [new ErrorTreeItem('Failed to load pipelines')];
     }
   }
-  
+
   /**
    * Get pipeline runs for a pipeline
    */
@@ -395,7 +396,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return [new ErrorTreeItem('Failed to load pipeline runs')];
     }
   }
-  
+
   /**
    * Get stages for a pipeline run
    */
@@ -412,7 +413,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return [new ErrorTreeItem('Failed to load stages')];
     }
   }
-  
+
   /**
    * Get jobs for a stage
    */
@@ -425,7 +426,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return [new ErrorTreeItem('Failed to load jobs')];
     }
   }
-  
+
   /**
    * Get tasks for a job
    */
@@ -438,7 +439,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
       return [new ErrorTreeItem('Failed to load tasks')];
     }
   }
-  
+
   /**
    * Handle real-time run status changes
    */
@@ -468,9 +469,9 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
     for (const [key, item] of this._itemCache.entries()) {
       if (item.itemType === 'run') {
         const runItem = item as PipelineRunTreeItem;
-        if (runItem.data.id === runId && 
-            runItem.data.pipeline.id === pipelineId && 
-            runItem.data.pipeline.project.id === projectId) {
+        if (runItem.data.id === runId &&
+          runItem.data.pipeline.id === pipelineId &&
+          runItem.data.pipeline.project.id === projectId) {
           return runItem;
         }
       }

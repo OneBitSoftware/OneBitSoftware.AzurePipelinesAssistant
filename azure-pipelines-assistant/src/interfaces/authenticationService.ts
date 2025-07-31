@@ -81,15 +81,3 @@ export interface IAuthenticationService {
   readonly onAuthenticationChanged: vscode.Event<boolean>;
 }
 
-/**
- * Custom error class for authentication-related errors
- */
-export class AuthenticationError extends Error {
-  constructor(
-    message: string,
-    public readonly errorCode: 'INVALID_PAT' | 'EXPIRED_PAT' | 'INSUFFICIENT_PERMISSIONS' | 'NETWORK_ERROR' | 'INVALID_ORGANIZATION'
-  ) {
-    super(message);
-    this.name = 'AuthenticationError';
-  }
-}

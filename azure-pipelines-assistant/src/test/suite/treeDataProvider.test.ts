@@ -1,7 +1,8 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
-import { AuthenticationError, IAuthenticationService, IAzureDevOpsService, IRealTimeUpdateService } from '../../interfaces';
+import { AuthenticationError } from '../../errors/errorTypes';
+import { IAuthenticationService, IAzureDevOpsService, IRealTimeUpdateService } from '../../interfaces';
 import { Job, Pipeline, PipelineRun, Project, Stage, Task } from '../../models';
 import { IConfigurationService } from '../../services/configurationService';
 import {
