@@ -3,6 +3,9 @@ import { CommandHandler } from './commands';
 import { DiagnosticCommands } from './commands/diagnosticCommands';
 import { ErrorHandler } from './errors/errorHandler';
 import { ExtensionError } from './errors/errorTypes';
+import { ActivityBarViewManager } from './providers/activityBarViewManager';
+import { ConfigurationWelcomeProvider } from './providers/configurationWelcomeProvider';
+import { PipelineTreeProvider } from './providers/pipelineTreeProvider';
 import { AuthenticationService } from './services/authenticationService';
 import { AzureDevOpsService } from './services/azureDevOpsService';
 import { CacheService } from './services/cacheService';
@@ -129,14 +132,50 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       dispose: () => treeDataProvider.dispose()
     });
 
-    // Register tree view
-    const treeView = vscode.window.createTreeView('azurePipelinesView', {
+    // Create pipeline tree provider (for Activity Bar view manager)
+    const pipelineTreeProvider = new PipelineTreeProvider(
+      azureDevOpsService,
+      authService
+    );
+    lifecycleManager.registerResource({
+      id: 'pipeline-tree-provider',
+      type: 'service',
+      dispose: () => pipelineTreeProvider.dispose()
+    });
+
+    // Create configuration welcome provider
+    const configWelcomeProvider = new ConfigurationWelcomeProvider(
+      context,
+      authService
+    );
+    lifecycleManager.registerResource({
+      id: 'config-welcome-provider',
+      type: 'service',
+      dispose: () => configWelcomeProvider.dispose()
+    });
+
+    // Create Activity Bar view manager
+    const activityBarViewManager = new ActivityBarViewManager(
+      context,
+      authService,
+      pipelineTreeProvider,
+      configWelcomeProvider
+    );
+    await activityBarViewManager.initialize();
+    lifecycleManager.registerResource({
+      id: 'activity-bar-view-manager',
+      type: 'service',
+      dispose: () => activityBarViewManager.dispose()
+    });
+
+    // Register tree view (fallback for compatibility)
+    const treeView = vscode.window.createTreeView('azurePipelinesViewFallback', {
       treeDataProvider,
       showCollapseAll: true,
       canSelectMany: false
     });
     lifecycleManager.registerResource({
-      id: 'tree-view',
+      id: 'tree-view-fallback',
       type: 'disposable',
       dispose: () => treeView.dispose()
     });

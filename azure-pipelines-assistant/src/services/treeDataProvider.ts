@@ -263,7 +263,7 @@ export class AzurePipelinesTreeDataProvider implements IAzurePipelinesTreeDataPr
     let actionCommand: vscode.Command | undefined;
 
     if (error instanceof AuthenticationError) {
-      switch (error.errorCode) {
+      switch (error.authErrorCode) {
         case 'INVALID_PAT':
           errorMessage = 'Invalid Personal Access Token';
           actionCommand = {

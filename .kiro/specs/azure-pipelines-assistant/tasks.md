@@ -73,7 +73,7 @@
   - Write unit tests for tree provider logic with mocked data
   - _Requirements: 1.1, 1.4, 1.5_
 
-- [ ] 8. Create Activity Bar view manager
+- [x] 8. Create Activity Bar view manager
   - Create ActivityBarViewManager class to coordinate between welcome and tree views
   - Implement view switching logic based on authentication state
   - Add authentication state change listeners to trigger view updates
@@ -82,7 +82,9 @@
   - Write unit tests for view manager state transitions
   - _Requirements: 1.1, 1.2, 1.3, 5.7_
 
-- [ ] 8.1. Create extension commands and context menus
+- [x] 8.1. Create extension commands and context menus
+
+
   - Register all extension commands in package.json and implement command handlers
   - Create context menu items for pipelines (View in Browser, Refresh, Add to Favorites, View Recent Runs)
   - Add context menu items for runs (View Details, View in Browser, View Logs, Download Artifacts)

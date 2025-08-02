@@ -205,6 +205,26 @@
         "command": "azurePipelinesAssistant.showActivationMetrics",
         "title": "Show Activation Metrics",
         "icon": "$(dashboard)"
+      },
+      {
+        "command": "azurePipelinesAssistant.searchPipelines",
+        "title": "Search Pipelines",
+        "icon": "$(search)"
+      },
+      {
+        "command": "azurePipelinesAssistant.filterByProject",
+        "title": "Filter by Project",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "azurePipelinesAssistant.filterByStatus",
+        "title": "Filter by Status",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "azurePipelinesAssistant.clearFilters",
+        "title": "Clear Filters",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -218,6 +238,26 @@
           "command": "azurePipelinesAssistant.configure",
           "when": "view == azurePipelinesView",
           "group": "navigation"
+        },
+        {
+          "command": "azurePipelinesAssistant.searchPipelines",
+          "when": "view == azurePipelinesView && azurePipelinesAssistant.configured",
+          "group": "1_search"
+        },
+        {
+          "command": "azurePipelinesAssistant.filterByProject",
+          "when": "view == azurePipelinesView && azurePipelinesAssistant.configured",
+          "group": "1_search"
+        },
+        {
+          "command": "azurePipelinesAssistant.filterByStatus",
+          "when": "view == azurePipelinesView && azurePipelinesAssistant.configured",
+          "group": "1_search"
+        },
+        {
+          "command": "azurePipelinesAssistant.clearFilters",
+          "when": "view == azurePipelinesView && azurePipelinesAssistant.configured",
+          "group": "1_search"
         }
       ],
       "view/item/context": [
@@ -362,6 +402,22 @@
         {
           "command": "azurePipelinesAssistant.showActivationMetrics",
           "title": "Azure Pipelines: Show Activation Metrics"
+        },
+        {
+          "command": "azurePipelinesAssistant.searchPipelines",
+          "title": "Azure Pipelines: Search Pipelines"
+        },
+        {
+          "command": "azurePipelinesAssistant.filterByProject",
+          "title": "Azure Pipelines: Filter by Project"
+        },
+        {
+          "command": "azurePipelinesAssistant.filterByStatus",
+          "title": "Azure Pipelines: Filter by Status"
+        },
+        {
+          "command": "azurePipelinesAssistant.clearFilters",
+          "title": "Azure Pipelines: Clear Filters"
         }
       ]
     },

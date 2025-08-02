@@ -252,7 +252,7 @@ export class PipelineTreeProvider implements vscode.TreeDataProvider<IAzurePipel
     let errorId = `error-${Date.now()}`;
 
     if (error instanceof AuthenticationError) {
-      switch (error.errorCode) {
+      switch (error.authErrorCode) {
         case 'INVALID_PAT':
           errorMessage = 'Invalid Personal Access Token';
           actionCommand = {

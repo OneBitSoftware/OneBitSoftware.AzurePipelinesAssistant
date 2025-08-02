@@ -1,27 +1,20 @@
 import * as vscode from 'vscode';
-import { IAzureDevOpsService, IAuthenticationService } from '../interfaces';
+import { IAuthenticationService, IAzureDevOpsService } from '../interfaces';
+import {
+  isJobTreeItem,
+  isPipelineRunTreeItem,
+  isPipelineTreeItem,
+  isProjectTreeItem,
+  isStageTreeItem
+} from '../models/treeItems';
 import { IConfigurationService } from '../services/configurationService';
 import { IStatusBarService } from '../services/statusBarService';
 import { AzurePipelinesTreeDataProvider } from '../services/treeDataProvider';
-import { RunDetailsWebviewProvider } from '../webviews/runDetailsWebview';
 import { LogViewerWebviewProvider } from '../webviews/logViewerWebview';
 import { PipelineTriggerWebviewProvider } from '../webviews/pipelineTriggerWebview';
 import { RunComparisonWebviewProvider } from '../webviews/runComparisonWebview';
+import { RunDetailsWebviewProvider } from '../webviews/runDetailsWebview';
 import { ConfigurationCommands } from './configurationCommands';
-import { 
-  ProjectTreeItem, 
-  PipelineTreeItem, 
-  PipelineRunTreeItem, 
-  StageTreeItem, 
-  JobTreeItem, 
-  TaskTreeItem,
-  isProjectTreeItem,
-  isPipelineTreeItem,
-  isPipelineRunTreeItem,
-  isStageTreeItem,
-  isJobTreeItem,
-  isTaskTreeItem
-} from '../models/treeItems';
 
 /**
  * Command handler class for Azure Pipelines Assistant
@@ -85,7 +78,8 @@ export class CommandHandler {
     disposables.push(
       vscode.commands.registerCommand('azurePipelinesAssistant.searchPipelines', () => this.searchPipelines()),
       vscode.commands.registerCommand('azurePipelinesAssistant.filterByProject', () => this.filterByProject()),
-      vscode.commands.registerCommand('azurePipelinesAssistant.filterByStatus', () => this.filterByStatus())
+      vscode.commands.registerCommand('azurePipelinesAssistant.filterByStatus', () => this.filterByStatus()),
+      vscode.commands.registerCommand('azurePipelinesAssistant.clearFilters', () => this.clearFilters())
     );
 
     // Pipeline approval commands
@@ -119,7 +113,7 @@ export class CommandHandler {
     try {
       // Show the enhanced trigger UI
       await this.pipelineTriggerWebviewProvider.showTriggerUI(item.data);
-      
+
       // Note: The status bar will be updated when the pipeline run is actually triggered
       // This would be handled by the trigger webview provider
     } catch (error) {
@@ -155,15 +149,15 @@ export class CommandHandler {
     try {
       const config = vscode.workspace.getConfiguration('azurePipelinesAssistant');
       const favorites = config.get<string[]>('favoriteProjects', []);
-      
+
       const itemId = isProjectTreeItem(item) ? item.data.id : item.data.project.id;
-      
+
       if (!favorites.includes(itemId)) {
         favorites.push(itemId);
         await config.update('favoriteProjects', favorites, vscode.ConfigurationTarget.Global);
-        
+
         vscode.window.showInformationMessage(`Added ${item.data.name} to favorites`);
-        
+
         // Update context for when clauses
         await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.isFavorite', true);
       } else {
@@ -183,16 +177,16 @@ export class CommandHandler {
     try {
       const config = vscode.workspace.getConfiguration('azurePipelinesAssistant');
       const favorites = config.get<string[]>('favoriteProjects', []);
-      
+
       const itemId = isProjectTreeItem(item) ? item.data.id : item.data.project.id;
       const index = favorites.indexOf(itemId);
-      
+
       if (index > -1) {
         favorites.splice(index, 1);
         await config.update('favoriteProjects', favorites, vscode.ConfigurationTarget.Global);
-        
+
         vscode.window.showInformationMessage(`Removed ${item.data.name} from favorites`);
-        
+
         // Update context for when clauses
         await vscode.commands.executeCommand('setContext', 'azurePipelinesAssistant.isFavorite', false);
       } else {
@@ -265,7 +259,7 @@ export class CommandHandler {
 
       // Show the run details webview
       await this.runDetailsWebviewProvider.showRunDetails(runItem);
-      
+
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load run details: ${error}`);
     }
@@ -284,7 +278,7 @@ export class CommandHandler {
 
       // Show the log viewer webview
       await this.logViewerWebviewProvider.showLogs(runId, projectId, pipelineId);
-      
+
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to load logs: ${error}`);
     }
@@ -315,7 +309,7 @@ export class CommandHandler {
         cancellable: false
       }, async (progress) => {
         progress.report({ increment: 0, message: 'Fetching artifact list...' });
-        
+
         const downloadPath = await this.azureDevOpsService.downloadArtifacts(
           item.data.id,
           item.data.pipeline.id,
@@ -324,7 +318,7 @@ export class CommandHandler {
         );
 
         progress.report({ increment: 100, message: 'Download completed' });
-        
+
         const action = await vscode.window.showInformationMessage(
           'Artifacts downloaded successfully',
           'Open Folder'
@@ -365,7 +359,7 @@ export class CommandHandler {
         );
 
         vscode.window.showInformationMessage(`Run #${item.data.id} has been cancelled`);
-        
+
         // Refresh tree to show updated status
         this.treeDataProvider.refresh();
       }
@@ -459,7 +453,7 @@ export class CommandHandler {
   private async filterByProject(): Promise<void> {
     try {
       const projects = await this.azureDevOpsService.getProjects();
-      
+
       const projectItems = projects.map(project => ({
         label: project.name,
         description: project.description || '',
@@ -499,6 +493,12 @@ export class CommandHandler {
     }
   }
 
+  private async clearFilters(): Promise<void> {
+    // Clear any active filters and refresh the tree view
+    this.treeDataProvider.refresh();
+    vscode.window.showInformationMessage('All filters cleared');
+  }
+
   // Pipeline Approval Commands
 
   private async approveRun(item: any): Promise<void> {
@@ -523,14 +523,14 @@ export class CommandHandler {
           cancellable: false
         }, async (progress) => {
           progress.report({ increment: 0, message: 'Submitting approval...' });
-          
+
           // Simulate approval API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
+
           progress.report({ increment: 100, message: 'Approval submitted' });
-          
+
           vscode.window.showInformationMessage(`Run #${item.data.id} approved successfully`);
-          
+
           // Refresh tree to show updated status
           this.treeDataProvider.refresh();
         });
@@ -569,14 +569,14 @@ export class CommandHandler {
           cancellable: false
         }, async (progress) => {
           progress.report({ increment: 0, message: 'Submitting rejection...' });
-          
+
           // Simulate rejection API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
+
           progress.report({ increment: 100, message: 'Rejection submitted' });
-          
+
           vscode.window.showInformationMessage(`Run #${item.data.id} rejected successfully`);
-          
+
           // Refresh tree to show updated status
           this.treeDataProvider.refresh();
         });
@@ -606,28 +606,28 @@ export class CommandHandler {
 
     try {
       vscode.window.showInformationMessage(`Started monitoring run #${runId}`);
-      
+
       // Update status bar to show the monitored run
       if (this.statusBarService) {
         this.statusBarService.updatePipelineRunStatus(item.data);
       }
-      
+
       const monitoringInterval = setInterval(async () => {
         try {
           const runDetails = await this.azureDevOpsService.getRunDetails(runId, pipelineId, projectId);
-          
+
           // Update status bar with latest run details
           if (this.statusBarService) {
             this.statusBarService.updatePipelineRunStatus(runDetails);
           }
-          
+
           if (runDetails.state === 'completed') {
             this.stopMonitoringInternal(runId);
-            
-            const resultMessage = runDetails.result === 'succeeded' 
+
+            const resultMessage = runDetails.result === 'succeeded'
               ? `✅ Pipeline run #${runId} completed successfully`
               : `❌ Pipeline run #${runId} ${runDetails.result}`;
-            
+
             const action = await vscode.window.showInformationMessage(
               resultMessage,
               'View Details',
@@ -649,7 +649,7 @@ export class CommandHandler {
             // Show progress notification for long-running builds
             const duration = Date.now() - runDetails.createdDate.getTime();
             const minutes = Math.floor(duration / 60000);
-            
+
             if (minutes > 0 && minutes % 5 === 0) { // Every 5 minutes
               vscode.window.showInformationMessage(
                 `⏱️ Run #${runId} still in progress (${minutes} minutes)`,
@@ -665,7 +665,7 @@ export class CommandHandler {
           console.warn(`Failed to monitor run ${runId}:`, error);
           this.stopMonitoringInternal(runId);
           vscode.window.showWarningMessage(`Stopped monitoring run #${runId} due to error`);
-          
+
           // Clear status bar on error
           if (this.statusBarService) {
             this.statusBarService.clearPipelineRunStatus();
@@ -695,11 +695,11 @@ export class CommandHandler {
     }
 
     const runId = item.data.id;
-    
+
     if (this.runMonitoringIntervals.has(runId)) {
       this.stopMonitoringInternal(runId);
       vscode.window.showInformationMessage(`Stopped monitoring run #${runId}`);
-      
+
       // Clear status bar when stopping monitoring
       if (this.statusBarService) {
         this.statusBarService.clearPipelineRunStatus();
@@ -715,7 +715,7 @@ export class CommandHandler {
       clearInterval(interval);
       this.runMonitoringIntervals.delete(runId);
     }
-    
+
     // Clear status bar when stopping monitoring internally
     if (this.statusBarService) {
       this.statusBarService.clearPipelineRunStatus();
